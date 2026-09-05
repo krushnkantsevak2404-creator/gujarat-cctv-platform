@@ -3,14 +3,15 @@ Application Configuration Module
 Loads settings from environment variables and .env file.
 """
 
-from typing import List, Union
-from pydantic import AnyHttpUrl, field_validator
+from typing import List, Set, Union
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
 from pathlib import Path
 
-# Base directory for the backend (where .env might reside)
-ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
+# Base directory for the backend & project
+BACKEND_DIR = Path(__file__).resolve().parent.parent.parent
+PROJECT_ROOT = BACKEND_DIR.parent
 
 
 class Settings(BaseSettings):
@@ -54,6 +55,65 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "gujarat_cctv_db"
     DATABASE_URL: Union[str, None] = None
 
+    # Storage Configuration
+    STORAGE_DIR: str = str(PROJECT_ROOT / "storage")
+    FOOTAGE_DIR_NAME: str = "footage"
+    PROCESSED_DIR_NAME: str = "processed"
+    PLATE_CROPS_DIR_NAME: str = "plate_crops"
+    MODELS_DIR_NAME: str = "ai"
+    MAX_VIDEO_UPLOAD_MB: int = 500
+    
+    ALLOWED_VIDEO_EXTENSIONS: Set[str] = {"mp4", "avi", "mov", "mkv", "webm"}
+    ALLOWED_VIDEO_MIME_TYPES: Set[str] = {
+        "video/mp4",
+        "video/x-msvideo",
+        "video/quicktime",
+        "video/x-matroska",
+        "video/webm",
+        "application/octet-stream",
+    }
+
+    # AI & YOLO Vehicle Detection & Tracking Configuration
+    YOLO_MODEL_NAME: str = "yolov8n.pt"
+    YOLO_CONFIDENCE_THRESHOLD: float = 0.35
+    DETECTION_FRAME_INTERVAL: int = 2
+    TRACKER_TYPE: str = "bytetrack.yaml"
+    TARGET_VEHICLE_CLASSES: Set[str] = {"car", "motorcycle", "bus", "truck"}
+
+    # ANPR & OCR Configuration
+    ANPR_OCR_CONFIDENCE_THRESHOLD: float = 0.30
+    ANPR_FRAME_INTERVAL: int = 3
+    ANPR_MIN_PLATE_WIDTH: int = 60
+    ANPR_MIN_PLATE_HEIGHT: int = 18
+
+    @property
+    def footage_storage_path(self) -> Path:
+        p = Path(self.STORAGE_DIR) / self.FOOTAGE_DIR_NAME
+        p.mkdir(parents=True, exist_ok=True)
+        return p
+
+    @property
+    def processed_storage_path(self) -> Path:
+        p = Path(self.STORAGE_DIR) / self.PROCESSED_DIR_NAME
+        p.mkdir(parents=True, exist_ok=True)
+        return p
+
+    @property
+    def plate_crops_storage_path(self) -> Path:
+        p = Path(self.STORAGE_DIR) / self.PLATE_CROPS_DIR_NAME
+        p.mkdir(parents=True, exist_ok=True)
+        return p
+
+    @property
+    def models_storage_path(self) -> Path:
+        p = PROJECT_ROOT / self.MODELS_DIR_NAME
+        p.mkdir(parents=True, exist_ok=True)
+        return p
+
+    @property
+    def max_upload_bytes(self) -> int:
+        return self.MAX_VIDEO_UPLOAD_MB * 1024 * 1024
+
     @property
     def sync_database_url(self) -> str:
         """Construct database connection string if not explicitly set."""
@@ -62,7 +122,7 @@ class Settings(BaseSettings):
         return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
     model_config = SettingsConfigDict(
-        env_file=(str(ROOT_DIR / ".env"), ".env"),
+        env_file=(str(PROJECT_ROOT / ".env"), str(BACKEND_DIR / ".env"), ".env"),
         env_file_encoding="utf-8",
         case_sensitive=True,
         extra="allow",
@@ -70,3 +130,8 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+# Ensure storage directories exist
+settings.footage_storage_path.mkdir(parents=True, exist_ok=True)
+settings.processed_storage_path.mkdir(parents=True, exist_ok=True)
+settings.plate_crops_storage_path.mkdir(parents=True, exist_ok=True)
+settings.models_storage_path.mkdir(parents=True, exist_ok=True)

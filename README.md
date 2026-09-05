@@ -1,10 +1,12 @@
 # Gujarat CCTV Intelligence Platform 🚔
 
 [![Gujarat Police Innovation Hackathon 2026](https://img.shields.io/badge/Gujarat%20Police-Hackathon%202026-blue.svg)](https://gujaratpolice.gov.in)
-[![Milestone](https://img.shields.io/badge/Milestone-1%20Project%20Foundation-emerald.svg)]()
+[![Milestone 6 Active](https://img.shields.io/badge/Milestone-6%20ANPR%20%2B%20OCR-emerald.svg)]()
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-18+-61DAFB.svg)](https://react.dev)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL%2BPostGIS-Spatial-336791.svg)](https://postgis.net)
+[![YOLOv8 + ByteTrack](https://img.shields.io/badge/AI-YOLOv8%20%2B%20ByteTrack-FF6F00.svg)](https://ultralytics.com)
+[![EasyOCR](https://img.shields.io/badge/OCR-EasyOCR%20(Indian%20Syntax)-purple.svg)](https://github.com/JaidedAI/EasyOCR)
 
 Proof of Concept developed for the **Gujarat Police Innovation Hackathon 2026**.
 
@@ -13,218 +15,169 @@ Proof of Concept developed for the **Gujarat Police Innovation Hackathon 2026**.
 
 ---
 
-## 1. Project Purpose 🎯
+## 1. Project Overview 🎯
 
-The **Gujarat CCTV Intelligence Platform** is a scalable, modular surveillance intelligence solution tailored for Gujarat Police operations. 
+The **Gujarat CCTV Intelligence Platform** is a centralized surveillance intelligence application designed for Gujarat Police command and control centers. 
 
-In real-world police scenarios, thousands of CCTV cameras across traffic intersections, toll plazas, crime hotspots, and public venues stream continuous video feeds. Operating full AI analytics on all feeds simultaneously is computationally prohibitive.
+Thousands of CCTV cameras across traffic intersections, toll plazas, crime hotspots, and public venues stream continuous video feeds. Operating full AI analytics on all feeds simultaneously is computationally prohibitive.
 
-This platform solves that problem in two key phases:
-1. **Model 1 (Registry & GIS Foundation)**: Centralizes all CCTV cameras across jurisdictions with spatial coordinates, coverage zones, stream metadata, and camera status.
-2. **Model 2 (Unified Viewing & Selective Analytics)**: Allows police operators in command centers to view unified feeds and selectively activate targeted AI analytics (such as vehicle tracking, ANPR, and object detection) on high-priority cameras on-demand.
-
-> [!NOTE]
-> **Milestone 1 — Project Foundation** establishes the clean multi-tier architecture, environment configuration, database connectivity layer, FastAPI backend with health endpoints, and a React + Vite dashboard placeholder.
+This platform solves that challenge in two core models:
+1. **Model 1 (CCTV Registry & GIS Foundation)**: Centralizes all CCTV cameras across jurisdictions with spatial coordinates (PostGIS SRID 4326), coverage zones, stream metadata, and camera status on an interactive Leaflet GIS map.
+2. **Model 2 (Unified Viewing & Selective Analytics)**: Allows police operators to view unified feeds and selectively activate targeted AI analytics (YOLOv8 Vehicle Detection, ByteTrack Multi-Object Tracking, and Automatic Number Plate Recognition with EasyOCR) on-demand.
 
 ---
 
-## 2. Technology Stack 💻
+## 2. Implemented Features (Milestones 1–6) 🚀
+
+- **Milestone 1 — Project Foundation**: FastAPI backend, React 18 frontend with police theme, health checks, and diagnostics.
+- **Milestone 2 — CCTV Registry & Recorded CCTV Footage**: Camera CRUD, PostgreSQL/PostGIS registry with persistent SQLite fallback, video upload, and HTTP 206 partial content streaming.
+- **Milestone 3 — GIS Camera Map**: Interactive Leaflet map with custom status markers, location popups, and GeoJSON export (`/api/cameras/geojson`).
+- **Milestone 4 — YOLOv8 Vehicle Detection**: Real-time bounding box detection for cars, motorcycles, buses, and trucks across video frames.
+- **Milestone 5 — Multi-Object Vehicle Tracking**: ByteTrack temporal tracking across frames, Track IDs, centroid motion trails, representative vehicle crops, and click-to-seek video seeking.
+- **Milestone 6 — ANPR & OCR Intelligence**: Automatic Number Plate Recognition using EasyOCR, Indian license plate syntax validation (`GJ01AB1234`, `22BH1234AA`), multi-frame deduplication, high-contrast Indian plate badges, and cross-camera global plate search.
+
+---
+
+## 3. Technology Stack 💻
 
 | Layer | Technologies | Purpose |
 | :--- | :--- | :--- |
-| **Frontend** | React 18, Vite, Tailwind CSS, Lucide Icons | Police Command Center UI Dashboard |
+| **Frontend** | React 18, Vite, Tailwind CSS, Leaflet, Lucide Icons | Police Command Center UI Dashboard |
 | **Backend** | Python 3.12, FastAPI, Uvicorn, Pydantic v2 | High-performance Asynchronous REST API |
-| **Database** | PostgreSQL + PostGIS, SQLAlchemy 2.0, GeoAlchemy2 | Geospatial Data & Camera Registry Storage |
+| **Database** | PostgreSQL + PostGIS, GeoAlchemy2, SQLAlchemy 2.0 (with SQLite fallback) | Spatial GIS & CCTV Registry Storage |
+| **Object Detection & Tracking** | YOLOv8 (Nano), ByteTrack, PyTorch, OpenCV | Vehicle Localization, Trajectories & Crops |
+| **ANPR & OCR** | EasyOCR, CLAHE Contrast Enhancement, Otsu Binarization | Number Plate Localization & Character Extraction |
 | **Configuration** | Pydantic Settings, python-dotenv | Secure environment variable handling |
 
 ---
 
-## 3. Project Structure 📁
+## 4. Architecture Pipeline 🏛️
 
-```text
-gujarat-cctv-platform/
-├── frontend/                     # React + Vite Command Center Dashboard
-│   ├── src/
-│   │   ├── components/           # UI Components
-│   │   ├── App.jsx               # Main Dashboard with Live Status
-│   │   ├── main.jsx              # React Entrypoint
-│   │   └── index.css             # Tailwind Styles
-│   ├── index.html                # HTML Document
-│   ├── vite.config.js            # Vite Configuration & API Proxy
-│   ├── tailwind.config.js        # Tailwind Theme Configuration
-│   └── package.json              # Frontend Dependencies
-│
-├── backend/                      # Python FastAPI REST API
-│   ├── app/
-│   │   ├── main.py               # FastAPI App Initialization & CORS
-│   │   ├── api/                  # API Routers & Endpoints
-│   │   │   └── v1/
-│   │   │       ├── router.py     # Endpoint Aggregator
-│   │   │       └── endpoints/
-│   │   │           └── health.py # Health Check Route (/api/health)
-│   │   ├── core/
-│   │   │   └── config.py         # Pydantic App Settings (.env loader)
-│   │   ├── database/
-│   │   │   ├── base.py           # SQLAlchemy Declarative Base
-│   │   │   └── session.py        # Database Engine & Session Generator
-│   │   ├── models/               # SQLAlchemy ORM Models (Milestone 2+)
-│   │   ├── schemas/              # Pydantic Schemas & DTOs
-│   │   │   └── health.py         # Health Check Schemas
-│   │   └── services/             # Business Logic & Services (Milestone 2+)
-│   ├── run.py                    # Backend Launcher Script
-│   └── requirements.txt          # Python Dependencies
-│
-├── database/                     # Database Migrations & GIS Scripts
-│   ├── init-scripts/
-│   │   └── 01_init_postgis.sql   # PostGIS Extension Init Script
-│   └── README.md
-│
-├── ai/                           # AI / Analytics Pipelines (Milestone 4+)
-├── streams/                      # RTSP / Video Stream Handling (Milestone 3+)
-├── sample-data/                  # Mock Video Feeds & GIS Shapefiles
-├── storage/                      # Local Media & Snapshots (Git Ignored)
-├── docs/                         # Project Architecture & Notes
-├── .gitignore                    # Git Ignore Rules
-├── .env.example                  # Environment Variables Template
-└── README.md                     # Project Guide & Documentation
+```
+                      ┌─────────────────────────────────────────┐
+                      │    Uploaded Recorded CCTV Footage       │
+                      └────────────────────┬────────────────────┘
+                                           │
+                                           ▼
+                      ┌─────────────────────────────────────────┐
+                      │   YOLOv8 Detection + ByteTrack Tracking  │
+                      └────────────────────┬────────────────────┘
+                                           │
+                                           ▼
+                      ┌─────────────────────────────────────────┐
+                      │    Plate Region Candidate Localization   │
+                      │   (Contour, AR, Morphological Filtering)│
+                      └────────────────────┬────────────────────┘
+                                           │
+                                           ▼
+                      ┌─────────────────────────────────────────┐
+                      │      Adaptive Image Preprocessing       │
+                      │     (CLAHE + Bilateral + Otsu Thresh)   │
+                      └────────────────────┬────────────────────┘
+                                           │
+                                           ▼
+                      ┌─────────────────────────────────────────┐
+                      │       EasyOCR Character Extraction       │
+                      └────────────────────┬────────────────────┘
+                                           │
+                                           ▼
+                      ┌─────────────────────────────────────────┐
+                      │ Indian Plate Normalization & Formatting │
+                      │  (Positional Syntax & Regex Validation) │
+                      └────────────────────┬────────────────────┘
+                                           │
+                                           ▼
+                      ┌─────────────────────────────────────────┐
+                      │    Multi-Frame Track Deduplication       │
+                      │     (Best Confidence Reading Saved)     │
+                      └────────────────────┬────────────────────┘
+                                           │
+                                           ▼
+                      ┌─────────────────────────────────────────┐
+                      │   PostgreSQL / SQLite Database Records  │
+                      │       + Saved Crop JPEGs on Disk        │
+                      └────────────────────┬────────────────────┘
+                                           │
+                                           ▼
+                      ┌─────────────────────────────────────────┐
+                      │   FastAPI REST APIs & React Dashboard   │
+                      │    (Global Search, Dossier, Player Seek)│
+                      └─────────────────────────────────────────┘
 ```
 
 ---
 
-## 4. Setup & Running Instructions (Windows) 🚀
+## 5. Quick Setup Summary ⚡
 
-Follow these beginner-friendly step-by-step instructions in PowerShell or Windows Command Prompt.
+For the complete, beginner-friendly setup guide, see **[`RUN_PROJECT.txt`](RUN_PROJECT.txt)**.
 
-### Step A: Configure Environment Variables
+### Prerequisites:
+- Python 3.10 to 3.12 (64-bit)
+- Node.js v18+ / v20+ LTS
+- PostgreSQL 14+ with PostGIS (optional, automatic SQLite fallback active)
 
-1. Open PowerShell and navigate to the project directory:
-   ```powershell
-   cd "E:\Kishan All File's\MCA Works\Gujrat Police Hackthon Project's\Hackthon Project File's\gujarat-cctv-platform"
-   ```
-
-2. Copy the `.env.example` file to create your local `.env`:
-   ```powershell
-   Copy-Item .env.example .env
-   ```
-
----
-
-### Step B: How to Start PostgreSQL + PostGIS
-
-#### Option 1: Using Installed PostgreSQL on Windows
-1. If PostgreSQL is installed, start the PostgreSQL service:
-   ```powershell
-   Start-Service postgresql*
-   ```
-2. Open pgAdmin or `psql` and create the platform database:
-   ```sql
-   CREATE DATABASE gujarat_cctv_db;
-   \c gujarat_cctv_db
-   CREATE EXTENSION postgis;
-   ```
-
-#### Option 2: Using Docker (Recommended for Portability)
-If you have Docker installed, you can start PostgreSQL with PostGIS in one command:
+### 1. Backend Setup:
 ```powershell
-docker run --name gujarat-cctv-db -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=gujarat_cctv_db -p 5432:5432 -d postgis/postgis:16-3.4
+# Create & activate Python virtual environment
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+# Install dependencies
+pip install -r backend/requirements.txt
+
+# Copy environment file
+copy .env.example .env
+
+# Run FastAPI server
+cd backend
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-> **Note**: The backend will run and serve `/api/health` even if PostgreSQL is not started yet. The database connection is handled gracefully with diagnostics.
-
----
-
-### Step C: How to Start FastAPI (Backend)
-
-1. Open a new PowerShell window and navigate to the `backend` folder:
-   ```powershell
-   cd "E:\Kishan All File's\MCA Works\Gujrat Police Hackthon Project's\Hackthon Project File's\gujarat-cctv-platform\backend"
-   ```
-
-2. Activate the Python virtual environment:
-   ```powershell
-   .\.venv\Scripts\Activate.ps1
-   ```
-   *(If script execution is disabled in PowerShell, you can run directly using `.\.venv\Scripts\python.exe run.py`)*
-
-3. Start the FastAPI development server:
-   ```powershell
-   python run.py
-   ```
-   Or using Uvicorn directly:
-   ```powershell
-   uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
-   ```
-
-4. You will see:
-   ```text
-   INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
-   INFO:     Application startup complete.
-   ```
-
----
-
-### Step D: How to Start React (Frontend)
-
-1. Open another PowerShell window and navigate to the `frontend` folder:
-   ```powershell
-   cd "E:\Kishan All File's\MCA Works\Gujrat Police Hackthon Project's\Hackthon Project File's\gujarat-cctv-platform\frontend"
-   ```
-
-2. Start the Vite development server:
-   ```powershell
-   cmd /c npm run dev
-   ```
-
-3. You will see:
-   ```text
-     VITE v5.1.6  ready in 250 ms
-
-     ➜  Local:   http://localhost:5173/
-     ➜  Network: use --host to expose
-   ```
-
-4. Open `http://localhost:5173` in your browser.
-
----
-
-## 5. How to Test the Health API 🧪
-
-### Test via Web Browser
-- Open: [http://127.0.0.1:8000/api/health](http://127.0.0.1:8000/api/health)
-- Interactive Swagger UI Docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-
-### Test via PowerShell
+### 2. Frontend Setup:
 ```powershell
-Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/health" | ConvertTo-Json
+# Open a second terminal
+cd frontend
+npm install
+npm run dev
 ```
 
-### Expected Response:
-```json
-{
-  "status": "ok",
-  "service": "Gujarat CCTV Intelligence Platform",
-  "version": "1.0.0",
-  "database": null
-}
-```
+### 3. Access Dashboards:
+- **Frontend Dashboard**: [http://127.0.0.1:5173](http://127.0.0.1:5173)
+- **Backend API & Swagger Docs**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+- **Health Check**: [http://127.0.0.1:8000/api/health](http://127.0.0.1:8000/api/health)
 
 ---
 
-## 6. Verification Checklist ✅
+## 6. Security & Operational Guidelines 🛡️
 
-- [x] Directory structure created
-- [x] `.gitignore` and `.env.example` created
-- [x] Backend FastAPI application created with `/api/health`
-- [x] Database configuration with PostgreSQL + PostGIS support
-- [x] React + Vite frontend dashboard showing **"Gujarat CCTV Intelligence Platform"** and **"System Status: Connected"**
-- [x] Real-time health polling between frontend and backend verified
-- [x] Detailed beginner-friendly documentation created
+- **DO NOT commit `.env` files, passwords, or tokens to GitHub.**
+- **DO NOT commit live police feed credentials, API keys, or private streams.**
+- **DO NOT connect to unauthorized public CCTV cameras or IP scanners.**
+- Use only locally authorized sample footage or officially provided hackathon feeds.
+- Large video clips (`*.mp4`, `*.avi`, `*.mov`) are excluded from Git via `.gitignore`.
 
 ---
 
-## 7. Next Steps (Upcoming Milestones) 🔮
+## 7. Current Project Limitations ⚠️
 
-- **Milestone 2**: Model 1 — CCTV Registry & GIS Foundation (Camera CRUD, PostGIS spatial models, GeoJSON map visualization).
-- **Milestone 3**: Model 2 — Unified Multi-Camera Stream Viewing (HLS/WebRTC streaming grid).
-- **Milestone 4**: Selective AI Analytics (On-demand YOLO detection, ANPR, vehicle tracking).
-- **Milestone 5**: Command Center Alerting & Incident Reports.
+### Implemented:
+- CCTV Camera Registry (CRUD, GPS, metadata, status)
+- PostGIS + Leaflet GIS Interactive Map
+- Recorded Footage Upload, Storage & HTTP 206 Streaming
+- YOLOv8 Vehicle Detection (Car, Motorcycle, Bus, Truck)
+- ByteTrack Multi-Object Tracking & Motion Trails
+- ANPR & OCR (EasyOCR, Indian Plate syntax validation, deduplication)
+- Central Cross-Camera License Plate Search
+- Synchronized Video Seeking from Plate & Track Sightings
+
+### Not Yet Implemented (Future Milestones):
+- Watchlist management & automated alerting
+- Multi-camera cross-junction journey reconstruction
+- Facial recognition or biometric analytics
+- Live RTSP/ONVIF streaming ingestion (future milestone)
+
+---
+
+## 8. Detailed Team Documentation 📖
+
+Please refer to **[`RUN_PROJECT.txt`](RUN_PROJECT.txt)** for complete step-by-step installation instructions, PostgreSQL setup, PostGIS configuration, Git branch workflow, and common troubleshooting tips.

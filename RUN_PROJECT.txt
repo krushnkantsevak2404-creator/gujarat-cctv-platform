@@ -1,0 +1,408 @@
+====================================================================
+GUJARAT CCTV INTELLIGENCE PLATFORM
+TEAM PROJECT SETUP & RUN GUIDE
+Gujarat Police Innovation Hackathon 2026
+====================================================================
+
+This guide provides step-by-step instructions for teammates to clone,
+configure, initialize, and run the Gujarat CCTV Intelligence Platform
+on Windows 10/11 laptops.
+
+--------------------------------------------------------------------
+1. PROJECT OVERVIEW
+--------------------------------------------------------------------
+The Gujarat CCTV Intelligence Platform is a centralized surveillance
+intelligence application built for the Gujarat Police Innovation
+Hackathon 2026 (Model 2: Unified Viewing & Selective Analytics on
+Model 1 CCTV Registry & GIS Foundation).
+
+Core Capabilities Implemented (Milestones 1–6):
+- CCTV Camera Registry (Live & Recorded sources, metadata, GPS)
+- PostGIS Spatial GIS Map (Interactive Leaflet map with custom markers)
+- Recorded CCTV Footage Management (Chunked streaming via HTTP 206)
+- AI Vehicle Detection (YOLOv8 inference across video frames)
+- Multi-Object Vehicle Tracking (ByteTrack temporary Track IDs & trails)
+- ANPR & OCR (Automatic Number Plate Recognition & Indian syntax validation)
+- Cross-Camera Global License Plate Search
+
+--------------------------------------------------------------------
+2. SYSTEM REQUIREMENTS
+--------------------------------------------------------------------
+- Operating System: Windows 10 or Windows 11 (64-bit)
+- Shell: Windows PowerShell (recommended) or Command Prompt (CMD)
+- Architecture: x86_64 (64-bit)
+
+--------------------------------------------------------------------
+3. SOFTWARE REQUIREMENTS (EXACT RECOMMENDED VERSIONS)
+--------------------------------------------------------------------
+1. Git:
+   - Version: 2.40+ (64-bit)
+   - Download: https://git-scm.com/download/win
+
+2. Python:
+   - Version: Python 3.10, 3.11, or 3.12 (64-bit)
+   - Tested Version: Python 3.12.2 (64-bit)
+   - Note: Check "Add python.exe to PATH" during installation.
+   - Download: https://www.python.org/downloads/windows/
+
+3. Node.js & npm:
+   - Version: Node.js v18.x, v20.x, or v22.x LTS (tested with v24.x LTS)
+   - npm Version: 9.x+ (tested with 11.x)
+   - Download: https://nodejs.org/
+
+4. PostgreSQL & PostGIS:
+   - PostgreSQL Version: 14, 15, or 16 (64-bit)
+   - PostGIS Version: 3.3+ (installed via Application Stack Builder)
+   - Default Port: 5432
+   - Note: If PostgreSQL is not installed, the application automatically
+     uses a persistent local SQLite database (storage/local_dev.db) for
+     seamless development fallback without blocking!
+
+--------------------------------------------------------------------
+4. HARDWARE REQUIREMENTS
+--------------------------------------------------------------------
+Minimum Development Setup:
+- CPU: Intel Core i3 / AMD Ryzen 3 (4 cores)
+- RAM: 8 GB DDR4
+- Storage: 10 GB free SSD storage
+- GPU: Not mandatory (Runs on CPU using PyTorch CPU backend)
+- Internet: Required for first-time dependency and model downloads
+
+Recommended Setup:
+- CPU: Intel Core i5/i7 (11th Gen+) or AMD Ryzen 5/7 (6+ cores)
+- RAM: 16 GB DDR4/DDR5
+- Storage: 20 GB free SSD storage
+- GPU: NVIDIA GeForce GTX 1650 / RTX 3050+ with CUDA 12 (enables 5x-10x
+  faster YOLO tracking and EasyOCR plate recognition)
+
+--------------------------------------------------------------------
+5. PROJECT STRUCTURE
+--------------------------------------------------------------------
+gujarat-cctv-platform/
+│
+├── backend/                  # FastAPI backend application
+│   ├── app/
+│   │   ├── api/v1/           # REST endpoints (cameras, footage, analytics, anpr)
+│   │   ├── core/             # Configuration & environment settings
+│   │   ├── database/         # SQLAlchemy session & base models
+│   │   ├── models/           # DB tables (Camera, Footage, Detection, Track, ANPR)
+│   │   ├── schemas/          # Pydantic validation & response models
+│   │   └── services/         # Business logic (YOLOv8, ByteTrack, EasyOCR, Video)
+│   ├── requirements.txt      # Python dependencies
+│   └── run.py                # Standalone backend runner script
+│
+├── frontend/                 # React 18 + Vite frontend
+│   ├── src/
+│   │   ├── components/       # UI Modals (GIS, Tracking, ANPR, Details, Player)
+│   │   ├── App.jsx           # Main dashboard & tab container
+│   │   └── index.css         # TailwindCSS styling & police theme
+│   ├── package.json          # Node.js dependencies
+│   └── vite.config.js        # Vite dev server & proxy settings
+│
+├── database/                 # Database initialization SQL scripts
+│   └── init-scripts/
+│       └── 01_init_postgis.sql
+│
+├── ai/                       # Local model cache directory (yolov8n.pt)
+│   └── .gitkeep
+│
+├── storage/                  # Local media & database storage (ignored by git)
+│   ├── footage/              # Uploaded CCTV video files
+│   ├── processed/            # Annotated tracking videos & vehicle crops
+│   ├── plate_crops/          # Cropped license plate images
+│   └── .gitkeep
+│
+├── streams/                  # Reserved for future live streams / RTSP
+│   └── .gitkeep
+│
+├── sample-data/              # Test scripts & sample traffic videos
+│   ├── test_api.py           # Milestone 1-3 API test
+│   ├── test_yolo_analytics.py # Milestone 4-5 Tracking pipeline test
+│   └── test_anpr_pipeline.py # Milestone 6 ANPR end-to-end test
+│
+├── docs/                     # Architecture & milestone documentation
+├── .env.example              # Template environment file
+├── .gitignore                # Git exclusions (videos, models, env, storage)
+├── requirements.txt          # Root Python requirements
+├── README.md                 # Project overview & architecture
+└── RUN_PROJECT.txt           # This team setup guide
+
+--------------------------------------------------------------------
+6. CLONE FROM GITHUB
+--------------------------------------------------------------------
+Open Windows PowerShell or CMD in your desired projects folder (e.g. C:\Projects):
+
+git clone YOUR_GITHUB_REPOSITORY_URL
+cd gujarat-cctv-platform
+
+(Replace YOUR_GITHUB_REPOSITORY_URL with the actual GitHub repo URL provided
+by your team lead, e.g. https://github.com/krushnkantsevak2404-creator/gujarat-cctv-platform.git)
+
+--------------------------------------------------------------------
+7. BACKEND SETUP (PYTHON VIRTUAL ENVIRONMENT)
+--------------------------------------------------------------------
+Step 1: Open PowerShell and navigate to the project directory:
+cd gujarat-cctv-platform
+
+Step 2: Verify Python version (must be Python 3.10+):
+python --version
+
+Step 3: Create a clean virtual environment:
+python -m venv .venv
+
+Step 4: Activate the virtual environment:
+# On PowerShell:
+.\.venv\Scripts\Activate.ps1
+
+# If PowerShell gives an Execution Policy error, run:
+# Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+# Then run: .\.venv\Scripts\Activate.ps1
+
+# On Command Prompt (CMD):
+.\.venv\Scripts\activate.bat
+
+Step 5: Upgrade pip and install dependencies:
+python -m pip install --upgrade pip
+pip install -r backend/requirements.txt
+
+--------------------------------------------------------------------
+8. FRONTEND SETUP (NODE.JS & REACT)
+--------------------------------------------------------------------
+Step 1: Open a new terminal / PowerShell window.
+Step 2: Navigate to the frontend directory:
+cd gujarat-cctv-platform/frontend
+
+Step 3: Install npm packages:
+npm install
+
+Step 4: Verify Vite development build:
+npm run build
+
+--------------------------------------------------------------------
+9. POSTGRESQL SETUP (OPTIONAL - SQLITE FALLBACK ACTIVE)
+--------------------------------------------------------------------
+The platform supports PostgreSQL + PostGIS out of the box, with an
+automatic SQLite fallback (storage/local_dev.db) if PostgreSQL is not running.
+
+If setting up PostgreSQL:
+1. Open pgAdmin 4 or psql command line.
+2. Create the platform database:
+   CREATE DATABASE gujarat_cctv_db;
+
+3. Connect to the database:
+   \c gujarat_cctv_db
+
+--------------------------------------------------------------------
+10. POSTGIS SETUP
+--------------------------------------------------------------------
+Run the following SQL commands in PostgreSQL pgAdmin query tool:
+
+CREATE EXTENSION IF NOT EXISTS postgis;
+CREATE EXTENSION IF NOT EXISTS postgis_topology;
+
+Verify PostGIS is active:
+SELECT postgis_full_version();
+
+--------------------------------------------------------------------
+11. ENVIRONMENT VARIABLES SETUP
+--------------------------------------------------------------------
+Step 1: Copy the .env.example template to .env in the project root:
+# On PowerShell:
+Copy-Item .env.example .env
+
+# On CMD:
+copy .env.example .env
+
+Step 2: Open .env in a text editor (e.g. VS Code, Notepad) and adjust
+your database credentials if using PostgreSQL:
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your_actual_postgres_password
+POSTGRES_DB=gujarat_cctv_db
+POSTGRES_SERVER=localhost
+POSTGRES_PORT=5432
+
+CRITICAL RULE:
+Never commit your '.env' file or database passwords to GitHub!
+
+--------------------------------------------------------------------
+12. DATABASE INITIALIZATION
+--------------------------------------------------------------------
+Database tables and migrations are initialized AUTOMATICALLY by SQLAlchemy
+when the FastAPI backend starts up:
+- Base.metadata.create_all(bind=engine) creates all tables:
+  * cameras (CCTV Registry with GeoAlchemy2 spatial point geometry)
+  * camera_footage (Recorded video clips & metadata)
+  * vehicle_detections (Frame-by-frame YOLO detections with Track IDs)
+  * vehicle_tracks (ByteTrack track summaries & representative crops)
+  * anpr_detections (Localized plate bboxes, OCR strings, Indian formats)
+  * processing_jobs (Async inference jobs & progress counters)
+- Sample Gujarat Police CCTV camera assets are automatically seeded if
+  the camera registry is empty!
+
+No manual migration commands or Alembic setup needed for first run.
+
+--------------------------------------------------------------------
+13. AI MODEL SETUP (YOLOv8 + EASYOCR)
+--------------------------------------------------------------------
+The AI models are downloaded and cached automatically upon first run:
+
+1. YOLOv8 Vehicle Detection & Tracking:
+   - Model: YOLOv8 Nano (yolov8n.pt, ~6.5 MB)
+   - Target Classes: car, motorcycle, bus, truck (COCO classes 2, 3, 5, 7)
+   - Tracker: ByteTrack (bytetrack.yaml)
+   - Auto-saved in: ai/yolov8n.pt or backend/yolov8n.pt
+
+2. EasyOCR Plate Recognition:
+   - Models: CRAFT Text Detector & CRNN Character Recognizer (~80 MB)
+   - Language: English alphanumeric ('en')
+   - Auto-downloaded by EasyOCR to ~/.EasyOCR/model/ on first run.
+
+- CPU Support: 100% operational on standard CPU without dedicated GPU.
+- GPU Support: Automatically utilized if NVIDIA CUDA is detected.
+
+--------------------------------------------------------------------
+14. STARTING THE PROJECT
+--------------------------------------------------------------------
+To run the full stack application, open TWO terminal windows:
+
+====================================================================
+TERMINAL 1 — FASTAPI BACKEND:
+====================================================================
+cd gujarat-cctv-platform
+.\.venv\Scripts\Activate.ps1
+cd backend
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+
+- Backend API URL: http://127.0.0.1:8000
+- Swagger Interactive Docs: http://127.0.0.1:8000/docs
+- ReDoc API Documentation: http://127.0.0.1:8000/redoc
+
+====================================================================
+TERMINAL 2 — REACT FRONTEND:
+====================================================================
+cd gujarat-cctv-platform/frontend
+npm run dev
+
+- Frontend UI Dashboard: http://127.0.0.1:5173
+
+--------------------------------------------------------------------
+15. TESTING THE PROJECT
+--------------------------------------------------------------------
+To run automated end-to-end tests against the running backend:
+
+# Test Milestone 1-3 (Health, Cameras, GeoJSON, Footage Upload):
+python sample-data/test_api.py
+
+# Test Milestone 4-5 (YOLO Detection & ByteTrack Tracking Pipeline):
+python sample-data/test_yolo_analytics.py
+
+# Test Milestone 6 (ANPR & EasyOCR Plate Extraction Pipeline):
+python sample-data/test_anpr_pipeline.py
+
+--------------------------------------------------------------------
+16. FIRST-RUN VERIFICATION CHECKLIST
+--------------------------------------------------------------------
+[ ] Backend starts at http://127.0.0.1:8000 and returns 200 on /api/health
+[ ] Frontend starts at http://127.0.0.1:5173 with dark police theme
+[ ] "CCTV Camera Registry" tab displays seeded Gujarat cameras
+[ ] "GIS Camera Map" tab loads Leaflet map centered on Gujarat coordinates
+[ ] Clicking a camera marker opens popup with status, coordinates & footage
+[ ] "Upload CCTV Video" accepts sample MP4 video and saves to storage
+[ ] Video player streams footage with HTTP 206 Partial Content
+[ ] "Analyze" button launches YOLO vehicle detection & ByteTrack tracking
+[ ] Tracking modal shows Track ID badges, motion paths, and crop previews
+[ ] "ANPR" button extracts license plates, formats (GJ01...), and confidence
+[ ] "ANPR Intelligence & Search" tab searches plate numbers across all cameras
+[ ] Clicking any plate timestamp seeks the video player to that exact second
+
+--------------------------------------------------------------------
+17. VIDEO / FOOTAGE STORAGE
+--------------------------------------------------------------------
+Uploaded video files and generated analytics are stored locally under:
+storage/
+├── footage/        # Raw user-uploaded CCTV clips (camera_<id>/<uuid>.mp4)
+├── processed/      # Annotated tracking videos & track crop images
+└── plate_crops/    # High-resolution license plate crops (anpr_<id>.jpg)
+
+All video files (*.mp4, *.avi, *.mov, *.mkv) are excluded from Git via
+.gitignore to ensure repository size remains lightweight.
+
+Teammates should upload their own authorized test video clips via the UI.
+
+--------------------------------------------------------------------
+18. GIT / GITHUB TEAM WORKFLOW
+--------------------------------------------------------------------
+1. Always pull latest changes before starting work:
+   git pull origin main
+
+2. Create a dedicated feature branch:
+   git checkout -b feature/your-feature-name
+
+3. Make changes, test both frontend and backend.
+
+4. Verify no secrets or videos are staged:
+   git status
+
+5. Stage and commit changes:
+   git add .
+   git commit -m "Add descriptive feature commit message"
+
+6. Push to GitHub:
+   git push -u origin feature/your-feature-name
+
+7. Create a Pull Request (PR) on GitHub for review before merging to main.
+
+--------------------------------------------------------------------
+19. COMMON ERRORS & TROUBLESHOOTING
+--------------------------------------------------------------------
+Q1: "Python is not recognized as an internal or external command"
+Solution: Add Python to Windows PATH or reinstall Python with "Add python.exe to PATH" checked.
+
+Q2: "Execution of scripts is disabled on this system" in PowerShell
+Solution: Run in PowerShell as Administrator:
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+Q3: "Connection refused (127.0.0.1:5432)" on backend startup
+Solution: If PostgreSQL is not running, the application will automatically
+fall back to SQLite (storage/local_dev.db). If you want PostgreSQL, ensure the
+PostgreSQL Windows service is started from Windows Services (services.msc).
+
+Q4: "Port 8000 or 5173 is already in use"
+Solution: Find and terminate the previous process or specify another port:
+uvicorn app.main:app --host 127.0.0.1 --port 8001
+
+Q5: "ModuleNotFoundError: No module named 'lap'"
+Solution: Run 'pip install lap' inside your activated virtual environment.
+
+Q6: "EasyOCR model download is slow"
+Solution: On first run, EasyOCR downloads ~80MB CRAFT & CRNN weights from
+GitHub releases. Ensure active internet connectivity for the initial run.
+
+--------------------------------------------------------------------
+20. SECURITY & COMPLIANCE NOTES
+--------------------------------------------------------------------
+- DO NOT commit '.env' files, passwords, or tokens to GitHub.
+- DO NOT commit private police credentials, API keys, or live feeds.
+- DO NOT connect to unauthorized public CCTV cameras or IP scanners.
+- Use only locally authorized sample footage or officially provided hackathon data.
+- Keep original license plate crops saved for auditing and verification.
+
+--------------------------------------------------------------------
+21. CURRENT PROJECT STATUS & LIMITATIONS
+--------------------------------------------------------------------
+IMPLEMENTED (Milestones 1–6):
+- CCTV Camera Registry (CRUD, GPS, metadata, status)
+- PostGIS + Leaflet GIS Interactive Map
+- Recorded Footage Upload, Storage & HTTP 206 Streaming
+- YOLOv8 Vehicle Detection (Car, Motorcycle, Bus, Truck)
+- ByteTrack Multi-Object Tracking & Motion Trails
+- ANPR & OCR (EasyOCR, Indian Plate syntax validation, deduplication)
+- Central Cross-Camera License Plate Search
+- Synchronized Video Seeking from Plate & Track Sightings
+
+NOT YET IMPLEMENTED (Future Milestones):
+- Watchlist management & hotlist alerts (Milestone 7)
+- Multi-camera cross-junction journey reconstruction
+- Facial recognition or biometric analytics
+- Live RTSP/ONVIF streaming ingestion (future milestone)
+====================================================================

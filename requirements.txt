@@ -1,5 +1,5 @@
 # =================================================================
-# Gujarat CCTV Intelligence Platform - Backend Dependencies
+# Gujarat CCTV Intelligence Platform - Root Dependencies
 # Gujarat Police Innovation Hackathon 2026
 # Python Version: 3.10 - 3.12 (64-bit)
 # =================================================================

@@ -1,0 +1,17 @@
+import os
+from pathlib import Path
+
+video_dir = Path(r"E:\Kishan All File's\MCA Works\Gujrat Police Hackthon Project's\Hackthon Project File's\gujarat-cctv-platform\sample-data\videos")
+video_dir.mkdir(parents=True, exist_ok=True)
+sample_file = video_dir / "sample_cctv_clip.mp4"
+
+# Minimal MP4 box structure (ftyp, moov with mvhd, mdat)
+ftyp = b'\x00\x00\x00\x1cftypisom\x00\x00\x02\x00isomiso2mp41'
+# mvhd version 0, timescale 1000 (0x03e8), duration 5000 (0x1388) => 5.0 seconds
+moov = b'\x00\x00\x00\x6cmvhd\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x03\xe8\x00\x00\x13\x88\x00\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x40\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02'
+mdat = b'\x00\x00\x00\x20mdat' + b'\x00' * 24
+
+with open(sample_file, "wb") as f:
+    f.write(ftyp + moov + mdat)
+
+print(f"Sample video created at {sample_file} (Size: {sample_file.stat().st_size} bytes)")
