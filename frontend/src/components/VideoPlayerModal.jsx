@@ -1,12 +1,25 @@
 import React, { useState } from 'react';
 import { X, Play, Film, HardDrive, Clock, Maximize2, AlertCircle, CheckCircle } from 'lucide-react';
 
-export default function VideoPlayerModal({ isOpen, onClose, footage, camera }) {
+export default function VideoPlayerModal({ isOpen, onClose, footage, camera, initialSeekTime }) {
   const [videoError, setVideoError] = useState(false);
+  const videoRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (videoRef.current && initialSeekTime !== undefined && initialSeekTime !== null) {
+      videoRef.current.currentTime = initialSeekTime;
+    }
+  }, [initialSeekTime, footage]);
 
   if (!isOpen || !footage) return null;
 
   const streamUrl = footage.stream_url || `/api/footage/${footage.id}/stream`;
+
+  const handleLoadedMetadata = () => {
+    if (videoRef.current && initialSeekTime !== undefined && initialSeekTime !== null) {
+      videoRef.current.currentTime = initialSeekTime;
+    }
+  };
 
   const formatFileSize = (bytes) => {
     if (!bytes) return '0 B';
@@ -53,9 +66,11 @@ export default function VideoPlayerModal({ isOpen, onClose, footage, camera }) {
         <div className="bg-black relative aspect-video flex items-center justify-center overflow-hidden border-b border-slate-800">
           {!videoError ? (
             <video
+              ref={videoRef}
               key={footage.id}
               controls
               autoPlay
+              onLoadedMetadata={handleLoadedMetadata}
               className="w-full h-full object-contain"
               onError={() => setVideoError(true)}
             >

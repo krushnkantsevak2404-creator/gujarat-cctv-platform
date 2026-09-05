@@ -26,6 +26,18 @@ from app.models.anpr import (
     AnprStatus,
     PlateFormatStatus,
 )
+from app.models.watchlist import (
+    WatchlistEntry,
+    WatchlistCategory,
+    WatchlistPriority,
+    WatchlistStatus,
+)
+from app.models.alert import (
+    VehicleAlert,
+    AlertType,
+    AlertSeverity,
+    AlertStatus,
+)
 
 __all__ = [
     "Camera",
@@ -43,4 +55,12 @@ __all__ = [
     "AnprDetection",
     "AnprStatus",
     "PlateFormatStatus",
+    "WatchlistEntry",
+    "WatchlistCategory",
+    "WatchlistPriority",
+    "WatchlistStatus",
+    "VehicleAlert",
+    "AlertType",
+    "AlertSeverity",
+    "AlertStatus",
 ]

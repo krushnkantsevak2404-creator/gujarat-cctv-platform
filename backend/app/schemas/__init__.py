@@ -29,6 +29,18 @@ from app.schemas.anpr import (
     AnprSearchResultItem,
     AnprSearchResponse,
 )
+from app.schemas.watchlist import (
+    WatchlistEntryBase,
+    WatchlistEntryCreate,
+    WatchlistEntryUpdate,
+    WatchlistStatusUpdate,
+    WatchlistEntryResponse,
+)
+from app.schemas.alert import (
+    AlertStatusUpdate,
+    AlertResponse,
+    AlertStatsResponse,
+)
 
 __all__ = [
     "HealthResponse",
@@ -49,4 +61,12 @@ __all__ = [
     "AnprSummaryResponse",
     "AnprSearchResultItem",
     "AnprSearchResponse",
+    "WatchlistEntryBase",
+    "WatchlistEntryCreate",
+    "WatchlistEntryUpdate",
+    "WatchlistStatusUpdate",
+    "WatchlistEntryResponse",
+    "AlertStatusUpdate",
+    "AlertResponse",
+    "AlertStatsResponse",
 ]

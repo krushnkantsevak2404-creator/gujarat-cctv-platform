@@ -590,6 +590,19 @@ def run_anpr_pipeline(footage_id: int, job_id: int):
 
         db.commit()
 
+        # Milestone 7: Automatically evaluate active watchlist entries & generate alerts
+        try:
+            from app.services import watchlist_service
+            generated_alerts = watchlist_service.evaluate_footage_anpr_detections(
+                db=db,
+                footage_id=footage_id,
+                anpr_records=saved_anpr_records
+            )
+            if generated_alerts:
+                logger.info(f"🚨 Milestone 7 Watchlist Engine: Generated {len(generated_alerts)} new alerts for footage {footage_id}.")
+        except Exception as alert_err:
+            logger.error(f"Failed to evaluate watchlist alerts for footage {footage_id}: {alert_err}", exc_info=True)
+
         # Update job summary counters
         job.status = JobStatus.COMPLETED
         job.progress = 100

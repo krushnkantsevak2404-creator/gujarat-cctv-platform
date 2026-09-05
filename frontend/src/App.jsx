@@ -20,6 +20,9 @@ import {
   SlidersHorizontal,
   MapPin,
   Globe,
+  Bell,
+  ShieldAlert,
+  AlertOctagon,
 } from 'lucide-react';
 
 import CameraStats from './components/CameraStats';
@@ -31,6 +34,8 @@ import DetectionResultsModal from './components/DetectionResultsModal';
 import GisView from './components/GisView';
 import AnprResultsModal from './components/AnprResultsModal';
 import AnprSearchGlobal from './components/AnprSearchGlobal';
+import WatchlistPage from './components/WatchlistPage';
+import AlertsPage from './components/AlertsPage';
 
 export default function App() {
   // Navigation tabs: 'registry' | 'gis' | 'anpr' | 'diagnostics'
@@ -64,6 +69,10 @@ export default function App() {
   // Focused camera on GIS map
   const [focusedCameraOnMap, setFocusedCameraOnMap] = useState(null);
 
+  // Milestone 7: Watchlist & Alerts state
+  const [alertStats, setAlertStats] = useState(null);
+  const [alertsPlateFilter, setAlertsPlateFilter] = useState('');
+
   // Fetch Health Check
   const checkHealth = async () => {
     const start = performance.now();
@@ -96,6 +105,19 @@ export default function App() {
     }
   };
 
+  // Fetch Alert Stats for live navigation badges
+  const fetchAlertStats = async () => {
+    try {
+      const res = await fetch('/api/alerts/stats');
+      if (res.ok) {
+        const data = await res.json();
+        setAlertStats(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch alert stats:', err);
+    }
+  };
+
   // Fetch Cameras with filters
   const fetchCameras = async () => {
     setLoading(true);
@@ -122,12 +144,16 @@ export default function App() {
   const refreshAll = () => {
     checkHealth();
     fetchStats();
+    fetchAlertStats();
     fetchCameras();
   };
 
   useEffect(() => {
     refreshAll();
-    const interval = setInterval(checkHealth, 10000);
+    const interval = setInterval(() => {
+      checkHealth();
+      fetchAlertStats();
+    }, 6000);
     return () => clearInterval(interval);
   }, []);
 
@@ -310,7 +336,46 @@ export default function App() {
               </span>
             </button>
 
-            {/* Tab 3: Central ANPR & License Plate Intelligence */}
+            {/* Tab 3: Watchlist Management (Milestone 7) */}
+            <button
+              onClick={() => setActiveTab('watchlist')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+                activeTab === 'watchlist'
+                  ? 'bg-rose-600/20 text-rose-300 border border-rose-500/40 shadow-inner'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+              }`}
+            >
+              <ShieldAlert className="w-4 h-4 text-rose-400" />
+              <span>Watchlist Management</span>
+              <span className="px-1.5 py-0.2 rounded bg-rose-500/20 text-[10px] text-rose-300 font-mono font-bold">
+                M7
+              </span>
+            </button>
+
+            {/* Tab 4: Surveillance Alerts (Milestone 7) */}
+            <button
+              onClick={() => setActiveTab('alerts')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap relative ${
+                activeTab === 'alerts'
+                  ? 'bg-red-600/25 text-red-300 border border-red-500/50 shadow-inner'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+              }`}
+            >
+              <Bell className="w-4 h-4 text-rose-400" />
+              <span>Surveillance Alerts</span>
+              {alertStats && alertStats.new_alerts > 0 ? (
+                <span className="px-2 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black animate-pulse flex items-center space-x-1 shadow-lg shadow-rose-600/50">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                  <span>{alertStats.new_alerts} NEW</span>
+                </span>
+              ) : alertStats && alertStats.total_alerts > 0 ? (
+                <span className="px-1.5 py-0.2 rounded bg-slate-800 text-[10px] text-slate-300 font-mono">
+                  {alertStats.total_alerts}
+                </span>
+              ) : null}
+            </button>
+
+            {/* Tab 5: Central ANPR & License Plate Intelligence */}
             <button
               onClick={() => setActiveTab('anpr')}
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${
@@ -326,7 +391,7 @@ export default function App() {
               </span>
             </button>
 
-            {/* Tab 4: Diagnostics */}
+            {/* Tab 6: Diagnostics */}
             <button
               onClick={() => setActiveTab('diagnostics')}
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${
@@ -470,7 +535,30 @@ export default function App() {
           />
         )}
 
-        {/* Tab Content 3: ANPR Intelligence & Global Search */}
+        {/* Tab Content 3: Watchlist Management (Milestone 7) */}
+        {activeTab === 'watchlist' && (
+          <WatchlistPage
+            onNavigateToAlerts={(plate) => {
+              setAlertsPlateFilter(plate);
+              setActiveTab('alerts');
+            }}
+          />
+        )}
+
+        {/* Tab Content 4: Surveillance Alerts (Milestone 7) */}
+        {activeTab === 'alerts' && (
+          <AlertsPage
+            initialPlateFilter={alertsPlateFilter}
+            onPlayFootageEvidence={(clip, cam, seekSec) => {
+              setPlayingFootageInfo({ footage: clip, camera: cam, seekTime: seekSec });
+            }}
+            onLocateCameraOnGis={(cam) => {
+              handleViewOnGisMap(cam);
+            }}
+          />
+        )}
+
+        {/* Tab Content 5: ANPR Intelligence & Global Search */}
         {activeTab === 'anpr' && (
           <AnprSearchGlobal
             onSelectResult={async (item) => {
@@ -497,7 +585,7 @@ export default function App() {
           />
         )}
 
-        {/* Tab Content 4: System Diagnostics & GeoJSON */}
+        {/* Tab Content 6: System Diagnostics & GeoJSON */}
         {activeTab === 'diagnostics' && (
           <div className="space-y-6">
             <div className="bg-[#0b1424] border border-slate-800 rounded-xl p-6 space-y-4">
@@ -593,6 +681,7 @@ export default function App() {
         onClose={() => setPlayingFootageInfo(null)}
         footage={playingFootageInfo?.footage}
         camera={playingFootageInfo?.camera}
+        initialSeekTime={playingFootageInfo?.seekTime}
       />
 
       <DetectionResultsModal
@@ -623,10 +712,10 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center space-x-2">
             <Lock className="w-3.5 h-3.5 text-blue-400" />
-            <span>Gujarat Police Innovation Hackathon 2026 — Milestone 6 ANPR & OCR Active</span>
+            <span>Gujarat Police Innovation Hackathon 2026 — Milestone 7 Watchlist & Alerts Active</span>
           </div>
           <div>
-            FastAPI + PostGIS + YOLO + ByteTrack + EasyOCR + React 18
+            FastAPI + PostGIS + YOLO + ByteTrack + EasyOCR + Watchlist Engine + React 18
           </div>
         </div>
       </footer>

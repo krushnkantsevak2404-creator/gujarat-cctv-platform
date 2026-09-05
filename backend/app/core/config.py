@@ -86,6 +86,10 @@ class Settings(BaseSettings):
     ANPR_MIN_PLATE_WIDTH: int = 60
     ANPR_MIN_PLATE_HEIGHT: int = 18
 
+    # Watchlist & Automatic Alerting Configuration
+    WATCHLIST_MATCH_MIN_CONFIDENCE: float = 0.35
+    WATCHLIST_ALERT_DEDUPLICATION_WINDOW_SECONDS: float = 5.0
+
     @property
     def footage_storage_path(self) -> Path:
         p = Path(self.STORAGE_DIR) / self.FOOTAGE_DIR_NAME
