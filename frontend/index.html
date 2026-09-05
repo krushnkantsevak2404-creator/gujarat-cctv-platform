@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gujarat Police CCTV Portal - Hackathon 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark-theme">
+  <!-- Top Command Header -->
+  <header class="command-header">
+    <div class="header-brand">
+      <div class="police-emblem">
+        <i class="fa-solid fa-shield-halved emblem-icon"></i>
+      </div>
+      <div class="brand-text">
+        <h1>GUJARAT POLICE <span class="gold-text">TRINETRA</span></h1>
+        <p class="brand-sub">HACKATHON 2026 | CCTV INGESTION & AI TRACKING GATEWAY</p>
+      </div>
+    </div>
+
+    <!-- Operating Mode Badge -->
+    <div class="mode-badge-pill" id="mode-badge-container">
+      <i class="fa-solid fa-sliders"></i> Mode: <strong id="cctv-mode-text">MOCK</strong>
+    </div>
+
+    <div class="header-actions">
+      <div class="status-pill online">
+        <span class="pulse-dot"></span>
+        <span id="system-status-text">PTS MONOTONIC ACTIVE</span>
+      </div>
+      <div class="time-display" id="clock-display">00:00:00 IST</div>
+      <div class="grid-layout-selector">
+        <button class="btn-grid active" data-grid="2x2" title="2x2 Grid"><i class="fa-solid fa-border-all"></i></button>
+        <button class="btn-grid" data-grid="1x1" title="1x1 Focus"><i class="fa-solid fa-square"></i></button>
+        <button class="btn-grid" data-grid="3x3" title="3x3 Matrix"><i class="fa-solid fa-grip"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Live Camera Load Control Bar -->
+  <section class="live-connect-bar">
+    <div class="bar-title">
+      <i class="fa-solid fa-video text-gold"></i>
+      <span>SELECT & START CAMERA FEED:</span>
+    </div>
+    <div class="connect-inputs">
+      <select id="select-camera-id" class="select-cam-dropdown">
+        <option value="">Loading catalogue from /api/ingest...</option>
+      </select>
+      <input type="text" id="custom-rtsp-input" placeholder="Optional Custom RTSP URL (rtsp://<host>:8554/stream/1)" style="flex: 1;">
+      <button class="btn btn-gold-sm" id="btn-start-selected-cam">
+        <i class="fa-solid fa-play"></i> START STREAM
+      </button>
+      <button class="btn btn-secondary-sm" id="btn-stop-selected-cam">
+        <i class="fa-solid fa-stop"></i> STOP STREAM
+      </button>
+    </div>
+  </section>
+
+  <!-- Main Body -->
+  <main class="dashboard-body">
+    <!-- Left Sidebar: Camera Catalogue -->
+    <aside class="sidebar-left">
+      <div class="sidebar-card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-list-check"></i> CAMERA CATALOGUE</h3>
+          <span class="badge" id="camera-count-badge">0 Feeds</span>
+        </div>
+        <div class="catalogue-info-text">
+          <small><i class="fa-solid fa-network-wired"></i> Dynamically queried from /api/ingest.</small>
+        </div>
+        <div class="camera-list" id="camera-sidebar-list">
+          <!-- Camera Cards Rendered Here -->
+        </div>
+      </div>
+
+      <!-- Pre-Submission Checklist -->
+      <div class="sidebar-card checklist-card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-clipboard-check text-gold"></i> COMPLIANCE VERIFICATION</h3>
+        </div>
+        <ul class="checklist-items">
+          <li><i class="fa-solid fa-check-double text-green"></i> RTSP over TCP forced</li>
+          <li><i class="fa-solid fa-check-double text-green"></i> PTS monotonic timing driven</li>
+          <li><i class="fa-solid fa-check-double text-green"></i> Auto-reconnect backoff (2s-30s)</li>
+          <li><i class="fa-solid fa-check-double text-green"></i> Load Management (Start/Stop API)</li>
+          <li><i class="fa-solid fa-check-double text-green"></i> Non-fatal IDR decode tolerance</li>
+          <li><i class="fa-solid fa-check-double text-green"></i> Database event persistence</li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Center Video Grid -->
+    <section class="video-matrix-container">
+      <div class="matrix-grid grid-2x2" id="cctv-matrix-grid">
+        <!-- Live Video Cards Rendered Here -->
+      </div>
+    </section>
+
+    <!-- Right Sidebar: Database Events & Protocol Information -->
+    <aside class="sidebar-right">
+      <div class="sidebar-card events-card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-database text-gold"></i> AI EVENTS DATABASE</h3>
+          <span class="badge badge-gold">PERSISTED</span>
+        </div>
+        <div class="alerts-feed" id="db-events-feed">
+          <!-- Database Events Injected Here -->
+        </div>
+      </div>
+
+      <div class="sidebar-card protocol-card">
+        <div class="card-header">
+          <h3><i class="fa-solid fa-network-wired"></i> PROTOCOLS AVAILABLE</h3>
+        </div>
+        <div class="protocol-box">
+          <div class="proto-item">
+            <strong>RTSP (TCP)</strong>
+            <span>rtsp://&lt;host&gt;:8554/stream/&lt;id&gt;</span>
+            <small>AI Inference & Frame Pipeline</small>
+          </div>
+          <div class="proto-item">
+            <strong>WebRTC (WHEP)</strong>
+            <span>http://&lt;host&gt;:8889/stream/&lt;id&gt;/whep</span>
+            <small>Low-latency Browser Preview</small>
+          </div>
+          <div class="proto-item">
+            <strong>HLS</strong>
+            <span>http://&lt;host&gt;/live/stream/&lt;id&gt;/index.m3u8</span>
+            <small>Dashboards & Mobile Networks</small>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
