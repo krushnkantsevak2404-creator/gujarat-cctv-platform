@@ -23,6 +23,7 @@ import {
   Bell,
   ShieldAlert,
   AlertOctagon,
+  Car,
 } from 'lucide-react';
 
 import CameraStats from './components/CameraStats';
