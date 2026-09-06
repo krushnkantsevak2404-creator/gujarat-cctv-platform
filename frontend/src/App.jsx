@@ -36,9 +36,10 @@ import AnprResultsModal from './components/AnprResultsModal';
 import AnprSearchGlobal from './components/AnprSearchGlobal';
 import WatchlistPage from './components/WatchlistPage';
 import AlertsPage from './components/AlertsPage';
+import VehicleSearchPage from './components/VehicleSearchPage';
 
 export default function App() {
-  // Navigation tabs: 'registry' | 'gis' | 'anpr' | 'diagnostics'
+  // Navigation tabs: 'registry' | 'gis' | 'watchlist' | 'alerts' | 'vehicle-search' | 'anpr' | 'diagnostics'
   const [activeTab, setActiveTab] = useState('registry');
 
   // Health check state
@@ -69,9 +70,10 @@ export default function App() {
   // Focused camera on GIS map
   const [focusedCameraOnMap, setFocusedCameraOnMap] = useState(null);
 
-  // Milestone 7: Watchlist & Alerts state
+  // Milestone 7 & 8: Watchlist, Alerts, and Vehicle Search state
   const [alertStats, setAlertStats] = useState(null);
   const [alertsPlateFilter, setAlertsPlateFilter] = useState('');
+  const [vehicleSearchPlate, setVehicleSearchPlate] = useState('');
 
   // Fetch Health Check
   const checkHealth = async () => {
@@ -375,7 +377,23 @@ export default function App() {
               ) : null}
             </button>
 
-            {/* Tab 5: Central ANPR & License Plate Intelligence */}
+            {/* Tab 5: Vehicle Search & Movement History (Milestone 8) */}
+            <button
+              onClick={() => setActiveTab('vehicle-search')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+                activeTab === 'vehicle-search'
+                  ? 'bg-cyan-600/20 text-cyan-300 border border-cyan-500/40 shadow-inner'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+              }`}
+            >
+              <Car className="w-4 h-4 text-cyan-400" />
+              <span>Vehicle Search & History</span>
+              <span className="px-1.5 py-0.2 rounded bg-cyan-500/20 text-[10px] text-cyan-300 font-mono font-bold">
+                M8
+              </span>
+            </button>
+
+            {/* Tab 6: Central ANPR & License Plate Intelligence */}
             <button
               onClick={() => setActiveTab('anpr')}
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${
@@ -391,7 +409,7 @@ export default function App() {
               </span>
             </button>
 
-            {/* Tab 6: Diagnostics */}
+            {/* Tab 7: Diagnostics */}
             <button
               onClick={() => setActiveTab('diagnostics')}
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${
@@ -542,6 +560,10 @@ export default function App() {
               setAlertsPlateFilter(plate);
               setActiveTab('alerts');
             }}
+            onSearchVehicle={(plate) => {
+              setVehicleSearchPlate(plate);
+              setActiveTab('vehicle-search');
+            }}
           />
         )}
 
@@ -558,7 +580,21 @@ export default function App() {
           />
         )}
 
-        {/* Tab Content 5: ANPR Intelligence & Global Search */}
+        {/* Tab Content 5: Vehicle Search & Movement History (Milestone 8) */}
+        {activeTab === 'vehicle-search' && (
+          <VehicleSearchPage
+            initialPlate={vehicleSearchPlate}
+            onPlayFootageEvidence={(clip, cam, seekSec) => {
+              setPlayingFootageInfo({ footage: clip, camera: cam, seekTime: seekSec });
+            }}
+            onNavigateToAlerts={(plate) => {
+              setAlertsPlateFilter(plate);
+              setActiveTab('alerts');
+            }}
+          />
+        )}
+
+        {/* Tab Content 6: ANPR Intelligence & Global Search */}
         {activeTab === 'anpr' && (
           <AnprSearchGlobal
             onSelectResult={async (item) => {
@@ -712,10 +748,10 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center space-x-2">
             <Lock className="w-3.5 h-3.5 text-blue-400" />
-            <span>Gujarat Police Innovation Hackathon 2026 — Milestone 7 Watchlist & Alerts Active</span>
+            <span>Gujarat Police Innovation Hackathon 2026 — Milestone 8 Vehicle Search & Movement History Active</span>
           </div>
           <div>
-            FastAPI + PostGIS + YOLO + ByteTrack + EasyOCR + Watchlist Engine + React 18
+            FastAPI + PostGIS + YOLO + ByteTrack + EasyOCR + Vehicle Sequence Engine + React 18
           </div>
         </div>
       </footer>

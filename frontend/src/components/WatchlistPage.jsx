@@ -34,7 +34,7 @@ const PRIORITY_BADGES = {
   CRITICAL: 'text-rose-300 bg-rose-900/50 border-rose-500 animate-pulse',
 };
 
-export default function WatchlistPage({ onNavigateToAlerts }) {
+export default function WatchlistPage({ onNavigateToAlerts, onSearchVehicle }) {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -385,6 +385,15 @@ export default function WatchlistPage({ onNavigateToAlerts }) {
                       {/* Actions */}
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end space-x-1.5">
+                          {onSearchVehicle && (
+                            <button
+                              onClick={() => onSearchVehicle(entry.normalized_plate_text)}
+                              className="p-1.5 bg-blue-950/40 hover:bg-blue-900/60 border border-blue-800/40 text-blue-300 rounded-lg transition"
+                              title="Search Movement History & Sequence"
+                            >
+                              <Search className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           <button
                             onClick={() => {
                               setEntryToEdit(entry);

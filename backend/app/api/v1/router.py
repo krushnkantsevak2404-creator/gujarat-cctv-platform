@@ -4,7 +4,7 @@ Aggregates health, camera registry, recorded footage, and AI vehicle analytics e
 """
 
 from fastapi import APIRouter
-from app.api.v1.endpoints import health, cameras, footage, analytics, anpr, watchlist, alerts
+from app.api.v1.endpoints import health, cameras, footage, analytics, anpr, watchlist, alerts, vehicle_search
 
 api_router = APIRouter()
 
@@ -26,3 +26,7 @@ api_router.include_router(anpr.router, tags=["ANPR & OCR"])
 # Milestone 7: Watchlist & Automatic Alerts endpoints
 api_router.include_router(watchlist.router, prefix="/watchlist", tags=["Watchlist Management"])
 api_router.include_router(alerts.router, prefix="/alerts", tags=["Vehicle Alerts"])
+
+# Milestone 8: Vehicle Search & Movement History endpoints
+api_router.include_router(vehicle_search.router, prefix="/vehicle-search", tags=["Vehicle Search & Detection Sequence"])
+

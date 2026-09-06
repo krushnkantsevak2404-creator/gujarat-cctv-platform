@@ -41,6 +41,13 @@ from app.schemas.alert import (
     AlertResponse,
     AlertStatsResponse,
 )
+from app.schemas.vehicle_search import (
+    VehicleObservationItem,
+    ObservedCameraSequenceStep,
+    VehicleSearchSummary,
+    VehicleAlertHistoryItem,
+    VehicleSearchResponse,
+)
 
 __all__ = [
     "HealthResponse",
@@ -69,4 +76,10 @@ __all__ = [
     "AlertStatusUpdate",
     "AlertResponse",
     "AlertStatsResponse",
+    "VehicleObservationItem",
+    "ObservedCameraSequenceStep",
+    "VehicleSearchSummary",
+    "VehicleAlertHistoryItem",
+    "VehicleSearchResponse",
 ]
+
