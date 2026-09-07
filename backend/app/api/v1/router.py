@@ -4,7 +4,7 @@ Aggregates health, camera registry, recorded footage, and AI vehicle analytics e
 """
 
 from fastapi import APIRouter
-from app.api.v1.endpoints import health, cameras, footage, analytics, anpr, watchlist, alerts, vehicle_search, viewer
+from app.api.v1.endpoints import health, cameras, footage, analytics, anpr, watchlist, alerts, vehicle_search, viewer, streams
 
 api_router = APIRouter()
 
@@ -32,4 +32,7 @@ api_router.include_router(vehicle_search.router, prefix="/vehicle-search", tags=
 
 # Milestone 9: Unified Multi-Camera CCTV Viewer endpoints
 api_router.include_router(viewer.router, prefix="/viewer", tags=["Unified CCTV Viewer"])
+
+# Milestone 10: Authorized RTSP / Stream Adapter endpoints
+api_router.include_router(streams.router, prefix="/streams", tags=["Authorized CCTV Stream Management"])
 

@@ -271,11 +271,13 @@ export default function UnifiedViewerPage({
             <div>
               <div className="flex items-center space-x-2">
                 <h1 className="text-lg font-bold text-white tracking-tight">Unified CCTV Viewer</h1>
-                <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-blue-900/60 text-blue-300 border border-blue-700/50 rounded-full font-mono">
-                  Milestone 9
+                <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-emerald-900/60 text-emerald-300 border border-emerald-700/50 rounded-full font-mono">
+                  Milestone 10: Stream Adapter & RTSP Layer
                 </span>
               </div>
-              <p className="text-xs text-slate-400">Centralized viewing of authorized CCTV sources</p>
+              <p className="text-xs text-slate-400">
+                Centralized live stream relay & recorded CCTV footage viewing platform
+              </p>
             </div>
           </div>
         </div>
@@ -576,7 +578,7 @@ export default function UnifiedViewerPage({
 }
 
 // ----------------------------------------------------------------------
-// CAMERA TILE COMPONENT
+// CAMERA TILE COMPONENT (Milestone 10: Stream Adapter & Live Relay)
 // ----------------------------------------------------------------------
 function CameraTile({
   slotData,
@@ -594,7 +596,14 @@ function CameraTile({
   const [loadingStream, setLoadingStream] = useState(true);
   const [selectedFootageId, setSelectedFootageId] = useState(slotData.footageId || null);
 
-  // Video Player state
+  // Live Stream Connection States
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [isLiveConnected, setIsLiveConnected] = useState(false);
+  const [streamStatus, setStreamStatus] = useState('NOT_CONFIGURED');
+  const [streamErrorMessage, setStreamErrorMessage] = useState(null);
+  const [liveFeedKey, setLiveFeedKey] = useState(Date.now());
+
+  // Video Player state (for Recorded Footage)
   const videoRef = useRef(null);
   const tileContainerRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -604,7 +613,7 @@ function CameraTile({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hasSeekedInitial, setHasSeekedInitial] = useState(false);
 
-  // Load Stream info
+  // Load Stream info and check current status
   useEffect(() => {
     let isMounted = true;
     setLoadingStream(true);
@@ -614,8 +623,13 @@ function CameraTile({
       .then((data) => {
         if (isMounted && data) {
           setStreamInfo(data);
+          setStreamStatus(data.stream_status);
           if (!selectedFootageId && data.available_footage && data.available_footage.length > 0) {
             setSelectedFootageId(data.available_footage[0].id);
+          }
+          // If already connected live stream
+          if (data.stream_status === 'CONNECTED' && data.source_type === 'LIVE_CAMERA') {
+            setIsLiveConnected(true);
           }
         }
       })
@@ -628,6 +642,57 @@ function CameraTile({
       isMounted = false;
     };
   }, [camera.id]);
+
+  // Connect to live stream
+  const handleConnectStream = async () => {
+    setIsConnecting(true);
+    setStreamErrorMessage(null);
+    try {
+      const res = await fetch(`/api/streams/${camera.id}/connect`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force_reconnect: true }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setStreamStatus(data.status);
+        if (data.status === 'CONNECTED') {
+          setIsLiveConnected(true);
+          setLiveFeedKey(Date.now());
+        } else {
+          setIsLiveConnected(false);
+          setStreamErrorMessage(data.error || data.message || 'Connecting to stream...');
+        }
+      } else {
+        setStreamStatus('ERROR');
+        setIsLiveConnected(false);
+        setStreamErrorMessage(data.detail || 'Connection failed.');
+      }
+    } catch (err) {
+      setStreamStatus('ERROR');
+      setIsLiveConnected(false);
+      setStreamErrorMessage('Unable to reach backend stream service.');
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  // Disconnect live stream
+  const handleDisconnectStream = async () => {
+    setIsConnecting(true);
+    try {
+      const res = await fetch(`/api/streams/${camera.id}/disconnect`, { method: 'POST' });
+      if (res.ok) {
+        setIsLiveConnected(false);
+        setStreamStatus('DISCONNECTED');
+        setStreamErrorMessage(null);
+      }
+    } catch (err) {
+      console.error('Failed to disconnect stream:', err);
+    } finally {
+      setIsConnecting(false);
+    }
+  };
 
   // Handle Initial Seek Time when video metadata is loaded
   const handleLoadedMetadata = () => {
@@ -702,6 +767,8 @@ function CameraTile({
       ? streamInfo.available_footage.find((f) => f.id === selectedFootageId) || streamInfo.available_footage[0]
       : null;
 
+  const isLiveCamera = camera.source_type === 'LIVE_CAMERA';
+
   return (
     <div
       ref={tileContainerRef}
@@ -713,7 +780,7 @@ function CameraTile({
       <div className="bg-[#081120] border-b border-slate-800/80 px-3 py-2 flex items-center justify-between text-xs select-none">
         <div className="flex items-center space-x-2 truncate">
           <span className="font-mono font-bold text-blue-400">{camera.camera_code}</span>
-          <span className="text-slate-400 truncate max-w-[130px] hidden sm:inline">{camera.location_name}</span>
+          <span className="text-slate-400 truncate max-w-[120px] hidden sm:inline">{camera.location_name}</span>
 
           {/* Status Badge */}
           <span
@@ -726,9 +793,9 @@ function CameraTile({
             {camera.status}
           </span>
 
-          {/* Source Badge */}
+          {/* Source & Connectivity Protocol Badge */}
           <span className="px-1.5 py-0.2 rounded text-[9px] font-mono bg-slate-800 text-slate-300 hidden md:inline">
-            {camera.source_type === 'RECORDED_FOOTAGE' ? '● RECORDING' : '● LIVE'}
+            {isLiveCamera ? `● LIVE (${camera.connectivity_type})` : '● RECORDING'}
           </span>
 
           {/* Active Watchlist Alert Badge */}
@@ -791,7 +858,7 @@ function CameraTile({
       {/* Video / Stream Content Area */}
       <div className="flex-1 bg-black relative flex items-center justify-center overflow-hidden group">
         {loadingStream ? (
-          <div className="text-center text-xs text-slate-500">Connecting to CCTV video source...</div>
+          <div className="text-center text-xs text-slate-500">Inspecting CCTV stream capabilities...</div>
         ) : camera.status === 'OFFLINE' ? (
           /* Offline Standby Screen */
           <div className="text-center space-y-2 p-4">
@@ -801,8 +868,8 @@ function CameraTile({
               No signal received from {camera.camera_code}. Check network connectivity in CCTV Registry.
             </div>
           </div>
-        ) : streamInfo && streamInfo.playback_mode === 'RECORDED_STREAM' && activeFootage ? (
-          /* Recorded Video Player */
+        ) : !isLiveCamera && activeFootage ? (
+          /* Recorded Video Player (HTTP 206 Byte Range) */
           <div className="w-full h-full relative flex items-center justify-center bg-black">
             <video
               ref={videoRef}
@@ -823,40 +890,65 @@ function CameraTile({
               {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6 ml-0.5" />}
             </button>
           </div>
-        ) : streamInfo && streamInfo.playback_mode === 'DIRECT_HTTP' && streamInfo.stream_url ? (
-          /* Direct Live Stream Player */
+        ) : isLiveCamera && isLiveConnected ? (
+          /* Live Stream Connected (Browser-Compatible MJPEG Media Relay) */
           <div className="w-full h-full relative flex items-center justify-center bg-black">
-            <video
-              ref={videoRef}
-              src={streamInfo.stream_url}
+            <img
+              key={`live-${liveFeedKey}`}
+              src={`/api/streams/${camera.id}/live?t=${liveFeedKey}`}
+              alt={`Live feed from ${camera.camera_code}`}
               className="w-full h-full object-contain"
-              autoPlay
-              muted={isMuted}
-              playsInline
+              onError={() => {
+                setIsLiveConnected(false);
+                setStreamStatus('ERROR');
+                setStreamErrorMessage('Live stream feed interrupted.');
+              }}
             />
-            <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-600 text-[10px] text-emerald-300 font-bold flex items-center space-x-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+
+            {/* Live Active Badge */}
+            <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-emerald-950/90 border border-emerald-500/80 text-[10px] text-emerald-300 font-bold flex items-center space-x-1.5 shadow-lg backdrop-blur-sm select-none">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               <span>LIVE</span>
+              <span className="text-[9px] text-emerald-400/80 font-mono">({camera.connectivity_type})</span>
             </div>
           </div>
+        ) : isLiveCamera && isConnecting ? (
+          /* Connecting Live Screen */
+          <div className="text-center space-y-3 p-4">
+            <RefreshCw className="w-7 h-7 text-blue-400 animate-spin mx-auto" />
+            <div className="text-xs font-bold text-blue-300">Connecting to authorized CCTV stream...</div>
+            <div className="text-[11px] text-slate-500 font-mono">Protocol: {camera.connectivity_type} • StreamManager Adapter</div>
+          </div>
         ) : (
-          /* Unconfigured / Missing Stream Standby Graphic */
-          <div className="text-center space-y-2 p-4">
+          /* Live Stream Standby / Disconnected / Unconfigured Screen */
+          <div className="text-center space-y-3 p-4">
             <Video className="w-8 h-8 text-slate-600 mx-auto" />
-            <div className="text-xs font-bold text-slate-400">
-              {streamInfo ? streamInfo.status_message : 'Live stream is not configured for this camera.'}
+            <div className="text-xs font-bold text-slate-300">
+              {streamErrorMessage || (streamInfo ? streamInfo.status_message : 'Live stream is not configured.')}
             </div>
-            <div className="text-[11px] text-slate-600 font-mono">
-              Source: {camera.source_type} • Protocol: {camera.connectivity_type}
+            <div className="text-[11px] text-slate-500 font-mono">
+              Source: {camera.source_type} • Connectivity: {camera.connectivity_type}
             </div>
+
+            {/* Quick Connect Action Button for Live Cameras */}
+            {isLiveCamera && (
+              <div className="pt-1">
+                <button
+                  onClick={handleConnectStream}
+                  disabled={isConnecting}
+                  className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md transition disabled:opacity-50"
+                >
+                  {isConnecting ? 'Connecting...' : 'Connect Live Stream'}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Video Controls Bar (For Recorded Footage) */}
-      {streamInfo && streamInfo.playback_mode === 'RECORDED_STREAM' && activeFootage && (
+      {/* Bottom Controls Bar: Recorded Footage Seek Controls */}
+      {!isLiveCamera && activeFootage && (
         <div className="bg-[#081120] border-t border-slate-800/80 px-3 py-2 space-y-1.5 text-xs">
-          {/* Progress Seek Bar */}
           <div className="flex items-center space-x-2">
             <span className="font-mono text-[10px] text-slate-400 w-10 text-right">
               {formatSeconds(currentTime)}
@@ -875,7 +967,6 @@ function CameraTile({
             </span>
           </div>
 
-          {/* Bottom Controls & Multiple Footage Selector */}
           <div className="flex items-center justify-between text-slate-400">
             <div className="flex items-center space-x-2">
               <button
@@ -907,8 +998,7 @@ function CameraTile({
               </button>
             </div>
 
-            {/* Multiple Recordings Selector Dropdown */}
-            {streamInfo.available_footage && streamInfo.available_footage.length > 1 && (
+            {streamInfo && streamInfo.available_footage && streamInfo.available_footage.length > 1 && (
               <div className="flex items-center space-x-1">
                 <select
                   value={selectedFootageId || ''}
@@ -923,6 +1013,53 @@ function CameraTile({
                 </select>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Bottom Controls Bar: Live Camera Stream Controls */}
+      {isLiveCamera && (
+        <div className="bg-[#081120] border-t border-slate-800/80 px-3 py-2 flex items-center justify-between text-xs">
+          <div className="flex items-center space-x-2">
+            {isLiveConnected ? (
+              <button
+                onClick={handleDisconnectStream}
+                disabled={isConnecting}
+                className="px-2.5 py-1 rounded bg-rose-950/60 hover:bg-rose-900/70 border border-rose-700 text-rose-200 text-xs font-bold transition flex items-center space-x-1"
+                title="Disconnect live stream session"
+              >
+                <span>Disconnect</span>
+              </button>
+            ) : (
+              <button
+                onClick={handleConnectStream}
+                disabled={isConnecting}
+                className="px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition flex items-center space-x-1 shadow-sm disabled:opacity-50"
+                title="Connect to authorized live stream"
+              >
+                <Radio className="w-3.5 h-3.5" />
+                <span>{isConnecting ? 'Connecting...' : 'Connect'}</span>
+              </button>
+            )}
+
+            <span className="text-[11px] text-slate-400 font-mono hidden sm:inline">
+              Relay: {isLiveConnected ? 'Active (MJPEG)' : 'Standby'}
+            </span>
+          </div>
+
+          <div className="flex items-center space-x-2 text-[11px] font-mono text-slate-500">
+            <span>Status:</span>
+            <span
+              className={`font-bold ${
+                isLiveConnected
+                  ? 'text-emerald-400'
+                  : streamStatus === 'ERROR'
+                  ? 'text-rose-400'
+                  : 'text-slate-400'
+              }`}
+            >
+              {streamStatus}
+            </span>
           </div>
         </div>
       )}

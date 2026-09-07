@@ -114,6 +114,7 @@ def get_camera_stream_info(db: Session, camera: Camera) -> CameraStreamInfoRespo
                 stream_status = StreamStatusEnum.CONNECTING
                 is_playable = False
                 status_message = "RTSP source configured. Media relay required for browser playback."
+                stream_url = f"/api/streams/{camera.id}/live"
             elif clean_url.endswith(".m3u8"):
                 playback_mode = PlaybackModeEnum.HLS_RELAY
                 stream_status = StreamStatusEnum.CONNECTED

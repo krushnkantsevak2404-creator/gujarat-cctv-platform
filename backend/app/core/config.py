@@ -90,6 +90,16 @@ class Settings(BaseSettings):
     WATCHLIST_MATCH_MIN_CONFIDENCE: float = 0.35
     WATCHLIST_ALERT_DEDUPLICATION_WINDOW_SECONDS: float = 5.0
 
+    # Milestone 10: Authorized RTSP & Stream Adapter Configuration
+    STREAM_CONNECT_TIMEOUT_SECONDS: int = 10
+    STREAM_READ_TIMEOUT_SECONDS: int = 15
+    STREAM_HEALTH_CHECK_INTERVAL_SECONDS: int = 30
+    STREAM_MAX_ACTIVE_SESSIONS: int = 20
+    FFMPEG_BIN_PATH: Union[str, None] = None
+    MEDIAMTX_BIN_PATH: Union[str, None] = None
+    RTSP_DEFAULT_USERNAME: Union[str, None] = None
+    RTSP_DEFAULT_PASSWORD: Union[str, None] = None
+
     @property
     def footage_storage_path(self) -> Path:
         p = Path(self.STORAGE_DIR) / self.FOOTAGE_DIR_NAME

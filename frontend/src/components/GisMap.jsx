@@ -129,6 +129,7 @@ export default function GisMap({
   onSelectCamera,
   onViewDetails,
   onViewFootage,
+  onOpenInViewer,
 }) {
   const markerRefs = useRef({});
 
@@ -265,6 +266,13 @@ export default function GisMap({
                       )}
                     </div>
 
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500 font-mono">Connectivity:</span>
+                      <span className="font-mono text-[11px] font-bold text-cyan-400 bg-cyan-950/40 px-1.5 py-0.5 rounded border border-cyan-800/40">
+                        {cam.connectivity_type || 'UNKNOWN'}
+                      </span>
+                    </div>
+
                     {cam.source_type === 'RECORDED_FOOTAGE' && (
                       <div className="flex justify-between items-center pt-1">
                         <span className="text-slate-500 font-mono">Footage:</span>
@@ -275,32 +283,42 @@ export default function GisMap({
                     )}
                   </div>
 
-                  {/* Actions */}
-                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
+                  {/* Actions (Milestone 10: Unified Viewer Integration) */}
+                  <div className="space-y-1.5 pt-2 border-t border-slate-800">
                     <button
-                      onClick={() => onViewDetails && onViewDetails(cam)}
-                      className="w-full px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center space-x-1 transition shadow"
+                      onClick={() => onOpenInViewer && onOpenInViewer(cam)}
+                      className="w-full px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center space-x-1 transition shadow-sm"
                     >
-                      <Eye className="w-3.5 h-3.5" />
-                      <span>Details</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Open in Unified Viewer</span>
                     </button>
 
-                    {cam.source_type === 'RECORDED_FOOTAGE' ? (
-                      <button
-                        onClick={() => onViewFootage && onViewFootage(cam)}
-                        className="w-full px-3 py-1.5 rounded-lg bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 font-bold text-xs flex items-center justify-center space-x-1 transition"
-                      >
-                        <HardDrive className="w-3.5 h-3.5" />
-                        <span>Footage ({cam.footage_count || 0})</span>
-                      </button>
-                    ) : (
+                    <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={() => onViewDetails && onViewDetails(cam)}
-                        className="w-full px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs flex items-center justify-center space-x-1 transition"
+                        className="w-full px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs flex items-center justify-center space-x-1 transition"
                       >
-                        <span>Manage</span>
+                        <Eye className="w-3 h-3" />
+                        <span>Details</span>
                       </button>
-                    )}
+
+                      {cam.source_type === 'RECORDED_FOOTAGE' ? (
+                        <button
+                          onClick={() => onViewFootage && onViewFootage(cam)}
+                          className="w-full px-2 py-1 rounded-lg bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 font-medium text-xs flex items-center justify-center space-x-1 transition"
+                        >
+                          <HardDrive className="w-3 h-3" />
+                          <span>Footage ({cam.footage_count || 0})</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => onViewDetails && onViewDetails(cam)}
+                          className="w-full px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs flex items-center justify-center space-x-1 transition"
+                        >
+                          <span>Manage</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                 </div>

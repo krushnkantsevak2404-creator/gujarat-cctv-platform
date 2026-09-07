@@ -34,7 +34,11 @@ This platform solves that challenge in two core models:
 - **Milestone 3 — GIS Camera Map**: Interactive Leaflet map with custom status markers, location popups, and GeoJSON export (`/api/cameras/geojson`).
 - **Milestone 4 — YOLOv8 Vehicle Detection**: Real-time bounding box detection for cars, motorcycles, buses, and trucks across video frames.
 - **Milestone 5 — Multi-Object Vehicle Tracking**: ByteTrack temporal tracking across frames, Track IDs, centroid motion trails, representative vehicle crops, and click-to-seek video seeking.
-- **Milestone 6 — ANPR & OCR Intelligence**: Automatic Number Plate Recognition using EasyOCR, Indian license plate syntax validation (`GJ01AB1234`, `22BH1234AA`), multi-frame deduplication, high-contrast Indian plate badges, and cross-camera global plate search.
+- **Milestone 6 — ANPR & OCR Intelligence**: Automatic Number Plate Recognition using EasyOCR, Indian license plate syntax validation (`GJ01AB1234`, `22BH1234AA`), multi-frame deduplication, and cross-camera plate search.
+- **Milestone 7 — Watchlist + Automatic Alerts**: Authorized watchlist database matching, configurable severity (`CRITICAL`, `HIGH`, `MEDIUM`, `LOW`), temporal deduplication, and real-time surveillance alerts.
+- **Milestone 8 — Vehicle Search & Observed Camera Detection Sequence**: Vehicle number search, chronological multi-camera timeline traversal, traversal duration & route sequence cards, and GIS map popup integration.
+- **Milestone 9 — Unified Multi-Camera CCTV Viewer**: Dynamic grid layouts (1x1, 2x1, 2x2, 3x2, 3x3), camera sidebar with real-time filters, synchronized seek bars, and cross-module deep linking.
+- **Milestone 10 — Authorized RTSP/VMS Integration & Stream Adapter Layer**: Modular backend stream adapter architecture (`StreamManager`, `RTSPAdapter`, `RecordedFootageAdapter`, `VMSAdapter`, `ONVIFAdapter`, `SDKAdapter`), live HTTP/MJPEG browser media relay, RTSP credential protection, and connect/disconnect stream lifecycle.
 
 ---
 
@@ -42,8 +46,9 @@ This platform solves that challenge in two core models:
 
 | Layer | Technologies | Purpose |
 | :--- | :--- | :--- |
-| **Frontend** | React 18, Vite, Tailwind CSS, Leaflet, Lucide Icons | Police Command Center UI Dashboard |
+| **Frontend** | React 18, Vite, Tailwind CSS, Leaflet, Lucide Icons | Police Command Center UI Dashboard & Multi-Camera Viewer |
 | **Backend** | Python 3.12, FastAPI, Uvicorn, Pydantic v2 | High-performance Asynchronous REST API |
+| **Stream Adapter Layer** | `StreamManager`, OpenCV, MJPEG Relay, HLS Adapter | Authorized RTSP, Recorded Footage & VMS Streaming |
 | **Database** | PostgreSQL + PostGIS, GeoAlchemy2, SQLAlchemy 2.0 (with SQLite fallback) | Spatial GIS & CCTV Registry Storage |
 | **Object Detection & Tracking** | YOLOv8 (Nano), ByteTrack, PyTorch, OpenCV | Vehicle Localization, Trajectories & Crops |
 | **ANPR & OCR** | EasyOCR, CLAHE Contrast Enhancement, Otsu Binarization | Number Plate Localization & Character Extraction |
@@ -51,59 +56,34 @@ This platform solves that challenge in two core models:
 
 ---
 
-## 4. Architecture Pipeline 🏛️
+## 4. Authorized Live Stream Integration (Model 2 Architecture) 📡
 
+```text
+Existing Departmental CCTV / VMS / Recorded Sources
+                      ↓
+           [Stream Adapter Layer]
+     ┌───────────────┬───────────────┬──────────────┐
+     │ RTSPAdapter   │ RecordedAdapter│ VMSAdapter   │ (ONVIF/SDK Placeholders)
+     └───────┬───────┴───────┬───────┴──────┬───────┘
+             └───────────────┼──────────────┘
+                             ↓
+                      [StreamManager]
+              (Session lifecycle, health check,
+               resource cleanup & deduplication)
+                             ↓
+              [Media Relay / Stream Engine]
+          (HTTP/MJPEG Relay, HLS Adapter Status)
+                             ↓
+            [Unified Multi-Camera CCTV Viewer]
 ```
-                      ┌─────────────────────────────────────────┐
-                      │    Uploaded Recorded CCTV Footage       │
-                      └────────────────────┬────────────────────┘
-                                           │
-                                           ▼
-                      ┌─────────────────────────────────────────┐
-                      │   YOLOv8 Detection + ByteTrack Tracking  │
-                      └────────────────────┬────────────────────┘
-                                           │
-                                           ▼
-                      ┌─────────────────────────────────────────┐
-                      │    Plate Region Candidate Localization   │
-                      │   (Contour, AR, Morphological Filtering)│
-                      └────────────────────┬────────────────────┘
-                                           │
-                                           ▼
-                      ┌─────────────────────────────────────────┐
-                      │      Adaptive Image Preprocessing       │
-                      │     (CLAHE + Bilateral + Otsu Thresh)   │
-                      └────────────────────┬────────────────────┘
-                                           │
-                                           ▼
-                      ┌─────────────────────────────────────────┐
-                      │       EasyOCR Character Extraction       │
-                      └────────────────────┬────────────────────┘
-                                           │
-                                           ▼
-                      ┌─────────────────────────────────────────┐
-                      │ Indian Plate Normalization & Formatting │
-                      │  (Positional Syntax & Regex Validation) │
-                      └────────────────────┬────────────────────┘
-                                           │
-                                           ▼
-                      ┌─────────────────────────────────────────┐
-                      │    Multi-Frame Track Deduplication       │
-                      │     (Best Confidence Reading Saved)     │
-                      └────────────────────┬────────────────────┘
-                                           │
-                                           ▼
-                      ┌─────────────────────────────────────────┐
-                      │   PostgreSQL / SQLite Database Records  │
-                      │       + Saved Crop JPEGs on Disk        │
-                      └────────────────────┬────────────────────┘
-                                           │
-                                           ▼
-                      ┌─────────────────────────────────────────┐
-                      │   FastAPI REST APIs & React Dashboard   │
-                      │    (Global Search, Dossier, Player Seek)│
-                      └─────────────────────────────────────────┘
-```
+
+### Model 2 Integration Principles:
+1. **Departmental VMS Independence**: Legacy departmental video storage and VMS systems remain intact and autonomous. The platform acts as a secure, unified integration layer without requiring central video migration.
+2. **Authorized Sources Only**: The platform connects strictly to cameras registered in the database. **Zero unauthorized camera discovery, zero IP/port scanning, and zero credential brute-forcing.**
+3. **Strict Credential Protection**: RTSP credentials (`username:password`) are stripped from API responses, sanitized in logs (`rtsp://****:****@host:554/stream`), and stored safely server-side.
+4. **Browser RTSP Limitation Handled**: Modern browsers cannot natively play raw `rtsp://` via HTML5 video elements. The backend media relay transcodes authorized streams into browser-compatible HTTP/MJPEG streams (`/api/streams/{camera_id}/live`) and HLS relays.
+5. **Reliable Recorded Fallback**: Recorded MP4 footage remains the 100% reliable fallback demo when external live streams are offline.
+6. **Future VMS & ONVIF Extensibility**: Modular adapter placeholders (`VMSAdapter`, `ONVIFAdapter`, `SDKAdapter`) allow seamless future integration with vendor APIs (Milestone, Genetec, Hanwha) without rewriting core platform code.
 
 ---
 
@@ -150,11 +130,15 @@ npm run dev
 
 ## 6. Security & Operational Guidelines 🛡️
 
+> [!IMPORTANT]
+> **Only authorized CCTV sources may be configured and connected.**
+
 - **DO NOT commit `.env` files, passwords, or tokens to GitHub.**
 - **DO NOT commit live police feed credentials, API keys, or private streams.**
-- **DO NOT connect to unauthorized public CCTV cameras or IP scanners.**
+- **DO NOT scan the internet, IP ranges, or perform port scanning for CCTV cameras.**
+- **DO NOT guess RTSP URLs or attempt authentication bypass.**
 - Use only locally authorized sample footage or officially provided hackathon feeds.
-- Large video clips (`*.mp4`, `*.avi`, `*.mov`) are excluded from Git via `.gitignore`.
+- Large video clips (`*.mp4`, `*.avi`, `*.mov`) and model weights are excluded from Git via `.gitignore`.
 
 ---
 

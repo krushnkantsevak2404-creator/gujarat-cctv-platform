@@ -365,8 +365,8 @@ export default function App() {
             >
               <Tv className="w-4 h-4 text-blue-400" />
               <span>Unified Viewer</span>
-              <span className="px-1.5 py-0.2 rounded bg-blue-500/20 text-[10px] text-blue-300 font-mono font-bold">
-                M9
+              <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-[10px] text-emerald-300 font-mono font-bold">
+                M10
               </span>
             </button>
 
@@ -582,10 +582,11 @@ export default function App() {
             onSelectCamera={(cam) => setFocusedCameraOnMap(cam)}
             onViewDetails={handleOpenDetailsModal}
             onViewFootage={handleGisViewFootage}
+            onOpenInViewer={(cam) => handleOpenInViewer(cam)}
           />
         )}
 
-        {/* Tab Content 3: Unified Multi-Camera CCTV Viewer (Milestone 9) */}
+        {/* Tab Content 3: Unified Multi-Camera CCTV Viewer (Milestone 10) */}
         {activeTab === 'viewer' && (
           <UnifiedViewerPage
             initialConfig={viewerInitialConfig}

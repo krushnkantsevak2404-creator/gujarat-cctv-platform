@@ -13,6 +13,8 @@ from app.database.base import Base
 from app.database.session import engine, SessionLocal
 from app.services.camera_service import seed_sample_cameras
 
+from app.streams import stream_manager
+
 logger = logging.getLogger("uvicorn.error")
 
 
@@ -67,7 +69,11 @@ async def lifespan(app: FastAPI):
         logger.error(f"Error initializing database tables: {e}")
 
     yield
-    logger.info("Backend service shutting down.")
+    logger.info("Backend service shutting down - Releasing all active stream sessions and media relays.")
+    try:
+        stream_manager.shutdown_all()
+    except Exception as e:
+        logger.error(f"Error during stream manager shutdown: {e}")
 
 
 # Initialize FastAPI app

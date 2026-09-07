@@ -22,6 +22,7 @@ export default function GisView({
   onSelectCamera,
   onViewDetails,
   onViewFootage,
+  onOpenInViewer,
 }) {
   const [search, setSearch] = useState('');
   const [department, setDepartment] = useState('');
@@ -169,6 +170,7 @@ export default function GisView({
             onSelectCamera={onSelectCamera}
             onViewDetails={onViewDetails}
             onViewFootage={onViewFootage}
+            onOpenInViewer={onOpenInViewer}
           />
         </div>
 
