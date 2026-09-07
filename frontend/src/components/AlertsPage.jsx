@@ -18,6 +18,7 @@ import {
   ExternalLink,
   ChevronRight,
   Radio,
+  Tv,
 } from 'lucide-react';
 
 const SEVERITY_CONFIG = {
@@ -69,6 +70,7 @@ export default function AlertsPage({
   initialPlateFilter = '',
   onPlayFootageEvidence,
   onLocateCameraOnGis,
+  onOpenInViewer,
 }) {
   const [alerts, setAlerts] = useState([]);
   const [stats, setStats] = useState(null);
@@ -428,6 +430,31 @@ export default function AlertsPage({
 
                   {/* Action Buttons (3 cols) */}
                   <div className="md:col-span-3 flex flex-col sm:flex-row md:flex-col gap-2 justify-end">
+                    {/* Open in Unified Viewer */}
+                    {onOpenInViewer && (
+                      <button
+                        onClick={() =>
+                          onOpenInViewer(
+                            {
+                              id: alert.camera_id,
+                              camera_name: alert.camera_name,
+                              camera_code: alert.camera_code,
+                              location_name: alert.location_name,
+                              latitude: alert.latitude,
+                              longitude: alert.longitude,
+                            },
+                            { id: alert.footage_id },
+                            alert.timestamp_seconds
+                          )
+                        }
+                        className="flex items-center justify-center space-x-1.5 px-3 py-1.5 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/40 rounded-xl text-xs font-bold transition shadow"
+                        title="Open camera in Unified Multi-Camera Viewer at alert timestamp"
+                      >
+                        <Tv className="w-3.5 h-3.5" />
+                        <span>Unified Viewer ({alert.formatted_timestamp})</span>
+                      </button>
+                    )}
+
                     {/* View Video Evidence (Click to seek) */}
                     <button
                       onClick={() =>
@@ -449,7 +476,7 @@ export default function AlertsPage({
                       title="Play CCTV footage seeked to exact detection second"
                     >
                       <Play className="w-3.5 h-3.5 fill-current" />
-                      <span>Video Evidence ({alert.formatted_timestamp})</span>
+                      <span>Video Evidence</span>
                     </button>
 
                     {/* Locate on GIS Map */}
@@ -470,7 +497,7 @@ export default function AlertsPage({
                         title="Locate camera on GIS Map"
                       >
                         <MapPin className="w-3.5 h-3.5" />
-                        <span>Locate on GIS Map</span>
+                        <span>Locate on Map</span>
                       </button>
                     )}
 

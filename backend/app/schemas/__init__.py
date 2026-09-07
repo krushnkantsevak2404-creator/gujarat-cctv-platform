@@ -48,6 +48,13 @@ from app.schemas.vehicle_search import (
     VehicleAlertHistoryItem,
     VehicleSearchResponse,
 )
+from app.schemas.stream import (
+    StreamStatusEnum,
+    PlaybackModeEnum,
+    CameraFootageItem,
+    CameraStreamInfoResponse,
+    ViewerStatsResponse,
+)
 
 __all__ = [
     "HealthResponse",
@@ -81,5 +88,10 @@ __all__ = [
     "VehicleSearchSummary",
     "VehicleAlertHistoryItem",
     "VehicleSearchResponse",
+    "StreamStatusEnum",
+    "PlaybackModeEnum",
+    "CameraFootageItem",
+    "CameraStreamInfoResponse",
+    "ViewerStatsResponse",
 ]
 

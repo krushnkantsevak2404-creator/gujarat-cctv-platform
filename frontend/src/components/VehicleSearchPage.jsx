@@ -25,6 +25,7 @@ import {
   Info,
   Radio,
   SlidersHorizontal,
+  Tv,
 } from 'lucide-react';
 import {
   MapContainer,
@@ -91,6 +92,7 @@ export default function VehicleSearchPage({
   initialPlate = '',
   onPlayFootageEvidence,
   onNavigateToAlerts,
+  onOpenInViewer,
 }) {
   const [plateInput, setPlateInput] = useState(initialPlate);
   const [data, setData] = useState(null);
@@ -649,26 +651,50 @@ export default function VehicleSearchPage({
                                 </div>
                               </div>
 
-                              {onPlayFootageEvidence && (
-                                <button
-                                  onClick={() =>
-                                    onPlayFootageEvidence(
-                                      { id: step.primary_footage_id, filename: `Footage #${step.primary_footage_id}` },
-                                      {
-                                        id: step.camera_id,
-                                        camera_name: step.camera_name,
-                                        camera_code: step.camera_code,
-                                        location_name: step.location_name,
-                                      },
-                                      step.first_timestamp_seconds
-                                    )
-                                  }
-                                  className="w-full flex items-center justify-center space-x-1.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition shadow mt-1"
-                                >
-                                  <Play className="w-3.5 h-3.5 fill-current" />
-                                  <span>View Detection Video</span>
-                                </button>
-                              )}
+                              <div className="flex flex-col space-y-1 mt-1">
+                                {onPlayFootageEvidence && (
+                                  <button
+                                    onClick={() =>
+                                      onPlayFootageEvidence(
+                                        { id: step.primary_footage_id, filename: `Footage #${step.primary_footage_id}` },
+                                        {
+                                          id: step.camera_id,
+                                          camera_name: step.camera_name,
+                                          camera_code: step.camera_code,
+                                          location_name: step.location_name,
+                                        },
+                                        step.first_timestamp_seconds
+                                      )
+                                    }
+                                    className="w-full flex items-center justify-center space-x-1.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-bold transition shadow"
+                                  >
+                                    <Play className="w-3 h-3 fill-current" />
+                                    <span>Play Video</span>
+                                  </button>
+                                )}
+
+                                {onOpenInViewer && (
+                                  <button
+                                    onClick={() =>
+                                      onOpenInViewer(
+                                        {
+                                          id: step.camera_id,
+                                          camera_name: step.camera_name,
+                                          camera_code: step.camera_code,
+                                          location_name: step.location_name,
+                                          department: step.department,
+                                        },
+                                        { id: step.primary_footage_id },
+                                        step.first_timestamp_seconds
+                                      )
+                                    }
+                                    className="w-full flex items-center justify-center space-x-1.5 py-1 bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-200 border border-cyan-500/50 rounded text-xs font-bold transition"
+                                  >
+                                    <Tv className="w-3 h-3" />
+                                    <span>Unified Viewer</span>
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </Popup>
                         </Marker>
@@ -796,7 +822,30 @@ export default function VehicleSearchPage({
                                 className="flex items-center space-x-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition"
                               >
                                 <MapPin className="w-3.5 h-3.5 text-blue-400" />
-                                <span>Center on Map</span>
+                                <span>Map</span>
+                              </button>
+                            )}
+
+                            {onOpenInViewer && (
+                              <button
+                                onClick={() =>
+                                  onOpenInViewer(
+                                    {
+                                      id: step.camera_id,
+                                      camera_name: step.camera_name,
+                                      camera_code: step.camera_code,
+                                      location_name: step.location_name,
+                                      department: step.department,
+                                    },
+                                    { id: step.primary_footage_id },
+                                    step.first_timestamp_seconds
+                                  )
+                                }
+                                className="flex items-center space-x-1 px-3 py-1.5 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/40 rounded-xl text-xs font-bold transition"
+                                title="Open in Unified Multi-Camera Viewer"
+                              >
+                                <Tv className="w-3.5 h-3.5" />
+                                <span>Viewer</span>
                               </button>
                             )}
 
@@ -817,7 +866,7 @@ export default function VehicleSearchPage({
                                 className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition shadow"
                               >
                                 <Play className="w-3.5 h-3.5 fill-current" />
-                                <span>Jump to Detection</span>
+                                <span>Detection</span>
                               </button>
                             )}
                           </div>
@@ -892,26 +941,51 @@ export default function VehicleSearchPage({
                         </td>
 
                         <td className="py-3.5 px-4 text-right">
-                          {onPlayFootageEvidence && (
-                            <button
-                              onClick={() =>
-                                onPlayFootageEvidence(
-                                  { id: obs.footage_id, filename: obs.footage_filename },
-                                  {
-                                    id: obs.camera_id,
-                                    camera_name: obs.camera_name,
-                                    camera_code: obs.camera_code,
-                                    location_name: obs.location_name,
-                                  },
-                                  obs.timestamp_seconds
-                                )
-                              }
-                              className="inline-flex items-center space-x-1 px-2.5 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/40 rounded-lg text-xs font-bold transition"
-                            >
-                              <Play className="w-3 h-3 fill-current" />
-                              <span>Play</span>
-                            </button>
-                          )}
+                          <div className="inline-flex items-center space-x-1.5 justify-end">
+                            {onOpenInViewer && (
+                              <button
+                                onClick={() =>
+                                  onOpenInViewer(
+                                    {
+                                      id: obs.camera_id,
+                                      camera_name: obs.camera_name,
+                                      camera_code: obs.camera_code,
+                                      location_name: obs.location_name,
+                                      department: obs.department,
+                                    },
+                                    { id: obs.footage_id, filename: obs.footage_filename },
+                                    obs.timestamp_seconds
+                                  )
+                                }
+                                className="inline-flex items-center space-x-1 px-2.5 py-1 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/40 rounded-lg text-xs font-bold transition"
+                                title="Open in Unified Multi-Camera Viewer"
+                              >
+                                <Tv className="w-3 h-3" />
+                                <span>Viewer</span>
+                              </button>
+                            )}
+
+                            {onPlayFootageEvidence && (
+                              <button
+                                onClick={() =>
+                                  onPlayFootageEvidence(
+                                    { id: obs.footage_id, filename: obs.footage_filename },
+                                    {
+                                      id: obs.camera_id,
+                                      camera_name: obs.camera_name,
+                                      camera_code: obs.camera_code,
+                                      location_name: obs.location_name,
+                                    },
+                                    obs.timestamp_seconds
+                                  )
+                                }
+                                className="inline-flex items-center space-x-1 px-2.5 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/40 rounded-lg text-xs font-bold transition"
+                              >
+                                <Play className="w-3 h-3 fill-current" />
+                                <span>Play</span>
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}

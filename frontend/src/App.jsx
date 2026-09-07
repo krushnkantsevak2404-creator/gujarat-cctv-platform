@@ -24,6 +24,7 @@ import {
   ShieldAlert,
   AlertOctagon,
   Car,
+  Tv,
 } from 'lucide-react';
 
 import CameraStats from './components/CameraStats';
@@ -38,9 +39,10 @@ import AnprSearchGlobal from './components/AnprSearchGlobal';
 import WatchlistPage from './components/WatchlistPage';
 import AlertsPage from './components/AlertsPage';
 import VehicleSearchPage from './components/VehicleSearchPage';
+import UnifiedViewerPage from './components/UnifiedViewerPage';
 
 export default function App() {
-  // Navigation tabs: 'registry' | 'gis' | 'watchlist' | 'alerts' | 'vehicle-search' | 'anpr' | 'diagnostics'
+  // Navigation tabs: 'registry' | 'gis' | 'viewer' | 'watchlist' | 'alerts' | 'vehicle-search' | 'anpr' | 'diagnostics'
   const [activeTab, setActiveTab] = useState('registry');
 
   // Health check state
@@ -71,10 +73,11 @@ export default function App() {
   // Focused camera on GIS map
   const [focusedCameraOnMap, setFocusedCameraOnMap] = useState(null);
 
-  // Milestone 7 & 8: Watchlist, Alerts, and Vehicle Search state
+  // Milestone 7, 8 & 9: Watchlist, Alerts, Vehicle Search, and Unified Viewer state
   const [alertStats, setAlertStats] = useState(null);
   const [alertsPlateFilter, setAlertsPlateFilter] = useState('');
   const [vehicleSearchPlate, setVehicleSearchPlate] = useState('');
+  const [viewerInitialConfig, setViewerInitialConfig] = useState(null);
 
   // Fetch Health Check
   const checkHealth = async () => {
@@ -250,6 +253,18 @@ export default function App() {
     }
   };
 
+  // Cross-Navigation: Open Camera / Footage in Unified Multi-Camera Viewer (Milestone 9)
+  const handleOpenInViewer = (camera, footage, seekTime = 0) => {
+    setViewerInitialConfig({
+      camera,
+      footage,
+      seekTime,
+      footageId: footage?.id,
+      timestampKey: Date.now(),
+    });
+    setActiveTab('viewer');
+  };
+
   return (
     <div className="min-h-screen flex flex-col justify-between bg-[#060b14] text-slate-100">
       
@@ -333,13 +348,29 @@ export default function App() {
               }`}
             >
               <MapPin className="w-4 h-4 text-emerald-400" />
-              <span>GIS Camera Map (Leaflet)</span>
+              <span>GIS Camera Map</span>
               <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-[10px] text-emerald-300 font-mono">
                 {cameras.length}
               </span>
             </button>
 
-            {/* Tab 3: Watchlist Management (Milestone 7) */}
+            {/* Tab 3: Unified Multi-Camera CCTV Viewer (Milestone 9) */}
+            <button
+              onClick={() => setActiveTab('viewer')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+                activeTab === 'viewer'
+                  ? 'bg-blue-600/25 text-blue-300 border border-blue-500/50 shadow-inner'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+              }`}
+            >
+              <Tv className="w-4 h-4 text-blue-400" />
+              <span>Unified Viewer</span>
+              <span className="px-1.5 py-0.2 rounded bg-blue-500/20 text-[10px] text-blue-300 font-mono font-bold">
+                M9
+              </span>
+            </button>
+
+            {/* Tab 4: Watchlist Management (Milestone 7) */}
             <button
               onClick={() => setActiveTab('watchlist')}
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${
@@ -554,7 +585,23 @@ export default function App() {
           />
         )}
 
-        {/* Tab Content 3: Watchlist Management (Milestone 7) */}
+        {/* Tab Content 3: Unified Multi-Camera CCTV Viewer (Milestone 9) */}
+        {activeTab === 'viewer' && (
+          <UnifiedViewerPage
+            initialConfig={viewerInitialConfig}
+            onOpenInGis={(cam) => handleViewOnGisMap(cam)}
+            onOpenAlerts={(code) => {
+              setAlertsPlateFilter(code);
+              setActiveTab('alerts');
+            }}
+            onOpenVehicleSearch={(plate) => {
+              setVehicleSearchPlate(plate);
+              setActiveTab('vehicle-search');
+            }}
+          />
+        )}
+
+        {/* Tab Content 4: Watchlist Management (Milestone 7) */}
         {activeTab === 'watchlist' && (
           <WatchlistPage
             onNavigateToAlerts={(plate) => {
@@ -568,7 +615,7 @@ export default function App() {
           />
         )}
 
-        {/* Tab Content 4: Surveillance Alerts (Milestone 7) */}
+        {/* Tab Content 5: Surveillance Alerts (Milestone 7) */}
         {activeTab === 'alerts' && (
           <AlertsPage
             initialPlateFilter={alertsPlateFilter}
@@ -578,10 +625,11 @@ export default function App() {
             onLocateCameraOnGis={(cam) => {
               handleViewOnGisMap(cam);
             }}
+            onOpenInViewer={handleOpenInViewer}
           />
         )}
 
-        {/* Tab Content 5: Vehicle Search & Movement History (Milestone 8) */}
+        {/* Tab Content 6: Vehicle Search & Movement History (Milestone 8) */}
         {activeTab === 'vehicle-search' && (
           <VehicleSearchPage
             initialPlate={vehicleSearchPlate}
@@ -592,6 +640,7 @@ export default function App() {
               setAlertsPlateFilter(plate);
               setActiveTab('alerts');
             }}
+            onOpenInViewer={handleOpenInViewer}
           />
         )}
 
