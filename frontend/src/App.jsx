@@ -25,8 +25,10 @@ import {
   AlertOctagon,
   Car,
   Tv,
+  Activity,
 } from 'lucide-react';
 
+import OperationalDashboard from './components/OperationalDashboard';
 import CameraStats from './components/CameraStats';
 import CameraTable from './components/CameraTable';
 import CameraModal from './components/CameraModal';
@@ -42,8 +44,8 @@ import VehicleSearchPage from './components/VehicleSearchPage';
 import UnifiedViewerPage from './components/UnifiedViewerPage';
 
 export default function App() {
-  // Navigation tabs: 'registry' | 'gis' | 'viewer' | 'watchlist' | 'alerts' | 'vehicle-search' | 'anpr' | 'diagnostics'
-  const [activeTab, setActiveTab] = useState('registry');
+  // Navigation tabs: 'dashboard' | 'registry' | 'gis' | 'viewer' | 'watchlist' | 'alerts' | 'vehicle-search' | 'anpr' | 'diagnostics'
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   // Health check state
   const [healthData, setHealthData] = useState(null);
@@ -325,6 +327,22 @@ export default function App() {
         {/* Navigation Tabs */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-3">
           <div className="flex items-center space-x-2 sm:space-x-3 overflow-x-auto">
+            {/* Tab 0: Operational Command Dashboard (Milestone 11) */}
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${
+                activeTab === 'dashboard'
+                  ? 'bg-blue-600/25 text-blue-300 border border-blue-500/50 shadow-inner'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/40'
+              }`}
+            >
+              <Activity className="w-4 h-4 text-emerald-400" />
+              <span>Command Dashboard</span>
+              <span className="px-1.5 py-0.2 rounded bg-emerald-500/20 text-[10px] text-emerald-300 font-mono font-bold">
+                M11
+              </span>
+            </button>
+
             {/* Tab 1: CCTV Camera Registry */}
             <button
               onClick={() => setActiveTab('registry')}
@@ -335,7 +353,7 @@ export default function App() {
               }`}
             >
               <CamIcon className="w-4 h-4 text-blue-400" />
-              <span>CCTV Camera Registry</span>
+              <span>CCTV Registry</span>
             </button>
 
             {/* Tab 2: GIS Camera Map (Leaflet + PostGIS) */}
@@ -380,13 +398,13 @@ export default function App() {
               }`}
             >
               <ShieldAlert className="w-4 h-4 text-rose-400" />
-              <span>Watchlist Management</span>
+              <span>Watchlist</span>
               <span className="px-1.5 py-0.2 rounded bg-rose-500/20 text-[10px] text-rose-300 font-mono font-bold">
                 M7
               </span>
             </button>
 
-            {/* Tab 4: Surveillance Alerts (Milestone 7) */}
+            {/* Tab 5: Surveillance Alerts (Milestone 7) */}
             <button
               onClick={() => setActiveTab('alerts')}
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap relative ${
@@ -409,7 +427,7 @@ export default function App() {
               ) : null}
             </button>
 
-            {/* Tab 5: Vehicle Search & Movement History (Milestone 8) */}
+            {/* Tab 6: Vehicle Search & Movement History (Milestone 8) */}
             <button
               onClick={() => setActiveTab('vehicle-search')}
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${
@@ -419,13 +437,13 @@ export default function App() {
               }`}
             >
               <Car className="w-4 h-4 text-cyan-400" />
-              <span>Vehicle Search & History</span>
+              <span>Vehicle Search</span>
               <span className="px-1.5 py-0.2 rounded bg-cyan-500/20 text-[10px] text-cyan-300 font-mono font-bold">
                 M8
               </span>
             </button>
 
-            {/* Tab 6: Central ANPR & License Plate Intelligence */}
+            {/* Tab 7: Central ANPR & License Plate Intelligence */}
             <button
               onClick={() => setActiveTab('anpr')}
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${
@@ -435,13 +453,13 @@ export default function App() {
               }`}
             >
               <Shield className="w-4 h-4 text-amber-400" />
-              <span>ANPR Intelligence & Search</span>
+              <span>ANPR Intelligence</span>
               <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-[10px] text-amber-300 font-mono font-bold">
                 M6
               </span>
             </button>
 
-            {/* Tab 7: Diagnostics */}
+            {/* Tab 8: Diagnostics */}
             <button
               onClick={() => setActiveTab('diagnostics')}
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap ${
@@ -451,7 +469,7 @@ export default function App() {
               }`}
             >
               <Terminal className="w-4 h-4 text-cyan-400" />
-              <span>Diagnostics & GeoJSON</span>
+              <span>Diagnostics</span>
             </button>
           </div>
 
@@ -464,6 +482,19 @@ export default function App() {
             <span className="hidden sm:inline">Refresh</span>
           </button>
         </div>
+
+        {/* Tab Content 0: Operational Command Dashboard (Milestone 11) */}
+        {activeTab === 'dashboard' && (
+          <OperationalDashboard
+            onNavigateToGis={() => setActiveTab('gis')}
+            onNavigateToViewer={(cam) => cam ? handleOpenInViewer(cam) : setActiveTab('viewer')}
+            onNavigateToVehicleSearch={() => setActiveTab('vehicle-search')}
+            onNavigateToAlerts={() => setActiveTab('alerts')}
+            onNavigateToRegistry={() => setActiveTab('registry')}
+            onOpenAddCamera={handleOpenAddModal}
+            onOpenDetailsModal={handleOpenDetailsModal}
+          />
+        )}
 
         {/* Tab Content 1: CCTV Camera Registry */}
         {activeTab === 'registry' && (

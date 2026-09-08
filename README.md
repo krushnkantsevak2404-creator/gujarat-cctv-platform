@@ -128,7 +128,23 @@ npm run dev
 
 ---
 
-## 6. Security & Operational Guidelines 🛡️
+## 6. Operational Command Dashboard & Health Monitoring 📊
+
+Milestone 11 establishes a real-time, dynamic **Operational Command Dashboard** designed for police command centers:
+
+### Core Capabilities:
+- **Dynamic Infrastructure Telemetry**: Real-time KPI summary cards (Total Cameras, Online, Offline, Maintenance/Unknown, Live Sources, Recorded Sources, Active Alerts, Vehicle Observations) computed dynamically from database records (zero hardcoded/fake numbers).
+- **Fleet Distribution & Progress Gauges**: Visual health breakdown (`Online █████████`, `Offline ███`, `Maintenance ██`, `Unknown █`) with interactive click-to-filter capabilities.
+- **Dynamic Department Breakdown**: Aggregates camera counts, live feeds, and active alert badges across all registered police departments (Traffic Police, City Surveillance, Highway Patrol, Industrial Security, etc.).
+- **Camera Registration vs. Stream Session Separation**: Preserves permanent camera registration status (`ONLINE`, `OFFLINE`, `MAINTENANCE`, `UNKNOWN`) while reporting transient live stream session statuses (`CONNECTED`, `DISCONNECTED`, `NOT_CONFIGURED`, `ERROR`) independently.
+- **Recent Watchlist Alerts Feed**: Live stream of high/critical alerts with severity badges, vehicle license plates, camera locations, and direct navigation.
+- **Genuine Vehicle Analytics**: Database-backed counters for ANPR plate observations, YOLOv8 detections, ByteTrack trajectories, and watchlist matches.
+- **System Health Diagnostics (`/api/health/system`)**: Automated verification of Backend API, Relational Database, GIS Map, AI Engine, and Live Stream Relay without credential leakage.
+- **Configurable Auto-Refresh & Timestamps**: Configurable periodic polling (15s, 30s, 60s, OFF) with "Last updated X seconds ago" indicators.
+
+---
+
+## 7. Security & Operational Guidelines 🛡️
 
 > [!IMPORTANT]
 > **Only authorized CCTV sources may be configured and connected.**
@@ -142,26 +158,7 @@ npm run dev
 
 ---
 
-## 7. Current Project Limitations ⚠️
-
-### Implemented:
-- CCTV Camera Registry (CRUD, GPS, metadata, status)
-- PostGIS + Leaflet GIS Interactive Map
-- Recorded Footage Upload, Storage & HTTP 206 Streaming
-- YOLOv8 Vehicle Detection (Car, Motorcycle, Bus, Truck)
-- ByteTrack Multi-Object Tracking & Motion Trails
-- ANPR & OCR (EasyOCR, Indian Plate syntax validation, deduplication)
-- Central Cross-Camera License Plate Search
-- Synchronized Video Seeking from Plate & Track Sightings
-
-### Not Yet Implemented (Future Milestones):
-- Watchlist management & automated alerting
-- Multi-camera cross-junction journey reconstruction
-- Facial recognition or biometric analytics
-- Live RTSP/ONVIF streaming ingestion (future milestone)
-
----
-
 ## 8. Detailed Team Documentation 📖
 
 Please refer to **[`RUN_PROJECT.txt`](RUN_PROJECT.txt)** for complete step-by-step installation instructions, PostgreSQL setup, PostGIS configuration, Git branch workflow, and common troubleshooting tips.
+
