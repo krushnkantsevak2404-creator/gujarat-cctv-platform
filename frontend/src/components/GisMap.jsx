@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo, useState } from 'react';
 import {
   MapContainer,
   TileLayer,
@@ -21,22 +21,43 @@ import {
   HelpCircle,
   XCircle,
   ExternalLink,
+  RotateCcw,
 } from 'lucide-react';
 
-// Controller component to handle programmatic map pan/zoom
-function MapController({ focusedCamera, centerCoords, zoomLevel }) {
+// Geographic Center & Initial Zoom for Gujarat State View
+const GUJARAT_CENTER = [22.30, 71.80];
+const GUJARAT_ZOOM = 7.5;
+
+// Controller component to handle programmatic map pan/zoom and reset
+function MapController({ focusedCamera, resetViewTrigger }) {
   const map = useMap();
 
+  // Reset to full Gujarat state view
   useEffect(() => {
-    if (focusedCamera && focusedCamera.latitude && focusedCamera.longitude) {
-      map.flyTo([focusedCamera.latitude, focusedCamera.longitude], 14, {
+    if (resetViewTrigger) {
+      map.setView(GUJARAT_CENTER, GUJARAT_ZOOM, {
+        animate: true,
+        duration: 1.0,
+      });
+    }
+  }, [resetViewTrigger, map]);
+
+  // Fly to focused camera when selected
+  useEffect(() => {
+    if (
+      focusedCamera &&
+      typeof focusedCamera.latitude === 'number' &&
+      typeof focusedCamera.longitude === 'number' &&
+      !isNaN(focusedCamera.latitude) &&
+      !isNaN(focusedCamera.longitude) &&
+      (focusedCamera.latitude !== 0 || focusedCamera.longitude !== 0)
+    ) {
+      map.flyTo([focusedCamera.latitude, focusedCamera.longitude], 15, {
         duration: 1.2,
         easeLinearity: 0.25,
       });
-    } else if (centerCoords) {
-      map.setView(centerCoords, zoomLevel || 8);
     }
-  }, [focusedCamera, centerCoords, zoomLevel, map]);
+  }, [focusedCamera, map]);
 
   return null;
 }
@@ -132,12 +153,9 @@ export default function GisMap({
   onOpenInViewer,
 }) {
   const markerRefs = useRef({});
+  const [resetTrigger, setResetTrigger] = useState(0);
 
-  // Default Center for Gujarat (Ahmedabad / Gandhinagar corridor)
-  const defaultCenter = [22.85, 71.95];
-  const defaultZoom = 7.5;
-
-  // Filter valid mapped cameras (valid lat/long)
+  // Filter only cameras with genuinely valid geographic coordinates
   const mappedCameras = useMemo(() => {
     return cameras.filter(
       (c) =>
@@ -148,7 +166,8 @@ export default function GisMap({
         c.latitude >= -90 &&
         c.latitude <= 90 &&
         c.longitude >= -180 &&
-        c.longitude <= 180
+        c.longitude <= 180 &&
+        (c.latitude !== 0 || c.longitude !== 0)
     );
   }, [cameras]);
 
@@ -162,26 +181,41 @@ export default function GisMap({
   return (
     <div className="relative w-full h-full min-h-[580px] rounded-xl overflow-hidden border border-slate-800 shadow-2xl bg-[#070d18]">
       
+      {/* Floating Toolbar: Reset Gujarat View */}
+      <div className="absolute top-3 right-3 z-20 flex items-center space-x-2">
+        <button
+          onClick={() => setResetTrigger((prev) => prev + 1)}
+          className="px-3 py-1.5 rounded-lg bg-[#081120]/90 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-bold shadow-xl backdrop-blur-md transition flex items-center space-x-1.5"
+          title="Reset map view to whole Gujarat state"
+        >
+          <RotateCcw className="w-3.5 h-3.5 text-blue-400" />
+          <span>Reset Gujarat View</span>
+        </button>
+      </div>
+
       {/* Map Container */}
       <MapContainer
-        center={defaultCenter}
-        zoom={defaultZoom}
+        center={GUJARAT_CENTER}
+        zoom={GUJARAT_ZOOM}
         zoomControl={false}
         className="w-full h-full z-10"
         style={{ minHeight: '580px', height: '100%' }}
       >
-        {/* Dark Command Center Map Tile Layer (CartoDB Dark Matter) */}
+        {/* OpenStreetMap Base Layer - Zero API Key Dependency */}
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxZoom={19}
         />
 
         <ZoomControl position="bottomleft" />
 
-        <MapController focusedCamera={focusedCamera} />
+        <MapController
+          focusedCamera={focusedCamera}
+          resetViewTrigger={resetTrigger}
+        />
 
-        {/* Render Markers for all Mapped Cameras */}
+        {/* Render Markers for all Mapped Cameras (Strictly at DB coordinates) */}
         {mappedCameras.map((cam) => {
           const isSelected = focusedCamera && focusedCamera.id === cam.id;
           const customIcon = createCameraIcon(cam, isSelected);
@@ -200,7 +234,7 @@ export default function GisMap({
                 },
               }}
             >
-              <Popup className="cctv-custom-popup" minWidth={280} maxWidth={320}>
+              <Popup className="cctv-custom-popup" minWidth={290} maxWidth={330}>
                 <div className="p-4 bg-[#0a1424] text-slate-100 rounded-xl space-y-3 font-sans">
                   
                   {/* Header */}

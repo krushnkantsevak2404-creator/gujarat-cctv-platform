@@ -1,5 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import { X, Shield, MapPin, Film, Radio, AlertCircle, Check } from 'lucide-react';
+import { X, Shield, MapPin, Film, Radio, AlertCircle, Check, Map, Compass } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
+import L from 'leaflet';
+
+const GUJARAT_DISTRICT_PRESETS = [
+  { name: 'Vadodara', lat: 22.3072, lng: 73.1812 },
+  { name: 'Ahmedabad', lat: 23.0225, lng: 72.5714 },
+  { name: 'Surat', lat: 21.1702, lng: 72.8311 },
+  { name: 'Rajkot', lat: 22.2965, lng: 70.7983 },
+  { name: 'Gandhinagar', lat: 23.2156, lng: 72.6369 },
+  { name: 'Bhavnagar', lat: 21.7645, lng: 72.1519 },
+];
+
+const pickerPinIcon = L.divIcon({
+  className: 'custom-picker-pin',
+  html: `
+    <div style="
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #10b981;
+      border: 2.5px solid #ffffff;
+      color: #ffffff;
+      font-size: 16px;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.8);
+      cursor: pointer;
+    ">
+      📍
+    </div>
+  `,
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+});
+
+function MapClickHandler({ onSelectLocation }) {
+  useMapEvents({
+    click(e) {
+      onSelectLocation(Number(e.latlng.lat.toFixed(6)), Number(e.latlng.lng.toFixed(6)));
+    },
+  });
+  return null;
+}
+
+function MapCenterController({ centerCoords }) {
+  const map = useMap();
+  useEffect(() => {
+    if (centerCoords && centerCoords[0] && centerCoords[1]) {
+      map.flyTo(centerCoords, 14, { duration: 0.8 });
+    }
+  }, [centerCoords, map]);
+  return null;
+}
 
 export default function CameraModal({ isOpen, onClose, onSave, camera }) {
   const isEditing = !!camera;
@@ -9,8 +63,8 @@ export default function CameraModal({ isOpen, onClose, onSave, camera }) {
     camera_code: '',
     department: 'Traffic Police',
     location_name: '',
-    latitude: 23.0225,
-    longitude: 72.5714,
+    latitude: '',
+    longitude: '',
     camera_type: 'FIXED',
     source_type: 'RECORDED_FOOTAGE',
     connectivity_type: 'FILE',
@@ -21,6 +75,7 @@ export default function CameraModal({ isOpen, onClose, onSave, camera }) {
 
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [showMapPicker, setShowMapPicker] = useState(false);
 
   useEffect(() => {
     if (camera) {
@@ -29,8 +84,8 @@ export default function CameraModal({ isOpen, onClose, onSave, camera }) {
         camera_code: camera.camera_code || '',
         department: camera.department || '',
         location_name: camera.location_name || '',
-        latitude: camera.latitude || 23.0225,
-        longitude: camera.longitude || 72.5714,
+        latitude: camera.latitude !== undefined && camera.latitude !== null ? camera.latitude : '',
+        longitude: camera.longitude !== undefined && camera.longitude !== null ? camera.longitude : '',
         camera_type: camera.camera_type || 'FIXED',
         source_type: camera.source_type || 'LIVE_CAMERA',
         connectivity_type: camera.connectivity_type || 'UNKNOWN',
@@ -39,14 +94,14 @@ export default function CameraModal({ isOpen, onClose, onSave, camera }) {
         description: camera.description || '',
       });
     } else {
-      // Default new camera template
+      // Default new camera template - no hardcoded coordinates
       setFormData({
         camera_name: '',
         camera_code: `CAM-${Math.floor(100 + Math.random() * 900)}`,
         department: 'Traffic Police',
         location_name: '',
-        latitude: 23.0225,
-        longitude: 72.5714,
+        latitude: '',
+        longitude: '',
         camera_type: 'FIXED',
         source_type: 'RECORDED_FOOTAGE',
         connectivity_type: 'FILE',
@@ -67,18 +122,46 @@ export default function CameraModal({ isOpen, onClose, onSave, camera }) {
     if (!formData.department.trim()) errs.department = 'Department is required';
     if (!formData.location_name.trim()) errs.location_name = 'Location name is required';
 
-    const lat = parseFloat(formData.latitude);
-    if (isNaN(lat) || lat < -90 || lat > 90) {
-      errs.latitude = 'Latitude must be between -90 and +90';
+    if (formData.latitude === '' || formData.latitude === null || formData.latitude === undefined) {
+      errs.latitude = 'Latitude is required (e.g. 22.3072 for Vadodara)';
+    } else {
+      const lat = parseFloat(formData.latitude);
+      if (isNaN(lat) || lat < -90 || lat > 90) {
+        errs.latitude = 'Latitude must be between -90 and +90';
+      }
     }
 
-    const lon = parseFloat(formData.longitude);
-    if (isNaN(lon) || lon < -180 || lon > 180) {
-      errs.longitude = 'Longitude must be between -180 and +180';
+    if (formData.longitude === '' || formData.longitude === null || formData.longitude === undefined) {
+      errs.longitude = 'Longitude is required (e.g. 73.1812 for Vadodara)';
+    } else {
+      const lon = parseFloat(formData.longitude);
+      if (isNaN(lon) || lon < -180 || lon > 180) {
+        errs.longitude = 'Longitude must be between -180 and +180';
+      }
     }
 
     setErrors(errs);
     return Object.keys(errs).length === 0;
+  };
+
+  const applyPreset = (preset) => {
+    setFormData((prev) => ({
+      ...prev,
+      latitude: preset.lat,
+      longitude: preset.lng,
+      location_name: prev.location_name ? prev.location_name : `${preset.name} City Area`,
+    }));
+    setErrors((prev) => ({ ...prev, latitude: null, longitude: null }));
+  };
+
+  const handleMapLocationSelect = (lat, lng) => {
+    setFormData((prev) => ({
+      ...prev,
+      latitude: lat,
+      longitude: lng,
+    }));
+    setErrors((prev) => ({ ...prev, latitude: null, longitude: null }));
+    setShowMapPicker(false);
   };
 
   const handleChange = (e) => {
@@ -234,46 +317,88 @@ export default function CameraModal({ isOpen, onClose, onSave, camera }) {
             </div>
           </div>
 
-          {/* Row 3: Coordinates (GPS) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 rounded-xl bg-[#070d18]/80 border border-slate-800">
-            <div>
-              <label className="block text-slate-300 font-medium mb-1 flex items-center space-x-1">
-                <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Latitude (North/South)</span>
+          {/* Row 3: Coordinates (GPS) + District Presets + Map Picker */}
+          <div className="p-3.5 rounded-xl bg-[#070d18]/80 border border-slate-800 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-1.5 text-slate-300 font-semibold">
+                <MapPin className="w-4 h-4 text-emerald-400" />
+                <span>Geographic GPS Coordinates</span>
                 <span className="text-rose-400">*</span>
-              </label>
-              <input
-                type="number"
-                step="any"
-                name="latitude"
-                value={formData.latitude}
-                onChange={handleChange}
-                placeholder="23.0225"
-                className="w-full px-3 py-2 rounded-lg bg-[#0b1424] border border-slate-700 text-emerald-400 font-mono focus:outline-none focus:border-emerald-500"
-              />
-              {errors.latitude && (
-                <p className="text-rose-400 text-[11px] mt-1">{errors.latitude}</p>
-              )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowMapPicker(true)}
+                className="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-semibold transition shadow-sm"
+              >
+                <Map className="w-3.5 h-3.5" />
+                <span>🗺️ Pick on Map</span>
+              </button>
             </div>
 
+            {/* District Quick-Preset Buttons */}
             <div>
-              <label className="block text-slate-300 font-medium mb-1 flex items-center space-x-1">
-                <MapPin className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Longitude (East/West)</span>
-                <span className="text-rose-400">*</span>
-              </label>
-              <input
-                type="number"
-                step="any"
-                name="longitude"
-                value={formData.longitude}
-                onChange={handleChange}
-                placeholder="72.5714"
-                className="w-full px-3 py-2 rounded-lg bg-[#0b1424] border border-slate-700 text-cyan-400 font-mono focus:outline-none focus:border-cyan-500"
-              />
-              {errors.longitude && (
-                <p className="text-rose-400 text-[11px] mt-1">{errors.longitude}</p>
-              )}
+              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-mono block mb-1.5">
+                Quick District Presets:
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {GUJARAT_DISTRICT_PRESETS.map((p) => {
+                  const isSelected =
+                    Number(formData.latitude) === p.lat && Number(formData.longitude) === p.lng;
+                  return (
+                    <button
+                      key={p.name}
+                      type="button"
+                      onClick={() => applyPreset(p)}
+                      className={`px-2 py-1 rounded-md text-[11px] font-medium border transition ${
+                        isSelected
+                          ? 'bg-blue-600 text-white border-blue-400 font-bold shadow-sm'
+                          : 'bg-[#0b1424] text-slate-300 border-slate-700 hover:border-blue-500/60 hover:text-white'
+                      }`}
+                    >
+                      {p.name} ({p.lat.toFixed(2)}, {p.lng.toFixed(2)})
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Latitude & Longitude Inputs */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <div>
+                <label className="block text-slate-400 text-[11px] font-medium mb-1">
+                  Latitude (North/South)
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  name="latitude"
+                  value={formData.latitude}
+                  onChange={handleChange}
+                  placeholder="e.g. 22.3072"
+                  className="w-full px-3 py-2 rounded-lg bg-[#0b1424] border border-slate-700 text-emerald-400 font-mono focus:outline-none focus:border-emerald-500 text-xs"
+                />
+                {errors.latitude && (
+                  <p className="text-rose-400 text-[11px] mt-1">{errors.latitude}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-slate-400 text-[11px] font-medium mb-1">
+                  Longitude (East/West)
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  name="longitude"
+                  value={formData.longitude}
+                  onChange={handleChange}
+                  placeholder="e.g. 73.1812"
+                  className="w-full px-3 py-2 rounded-lg bg-[#0b1424] border border-slate-700 text-cyan-400 font-mono focus:outline-none focus:border-cyan-500 text-xs"
+                />
+                {errors.longitude && (
+                  <p className="text-rose-400 text-[11px] mt-1">{errors.longitude}</p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -428,6 +553,98 @@ export default function CameraModal({ isOpen, onClose, onSave, camera }) {
             </button>
           </div>
         </form>
+
+        {/* Interactive Location Picker Modal */}
+        {showMapPicker && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <div className="bg-[#0b1424] border border-slate-700 rounded-2xl w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+              {/* Picker Header */}
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-[#080f1c]">
+                <div className="flex items-center space-x-2">
+                  <div className="p-1.5 rounded-lg bg-emerald-600/20 text-emerald-400 border border-emerald-500/40">
+                    <Map className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Select Camera Location on Gujarat Map</h3>
+                    <p className="text-[11px] text-slate-400">
+                      Click anywhere on the map to set exact coordinates. Powered by OpenStreetMap.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowMapPicker(false)}
+                  className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Picker Map Area */}
+              <div className="h-[420px] w-full relative bg-[#070d18]">
+                <MapContainer
+                  center={
+                    formData.latitude &&
+                    formData.longitude &&
+                    !isNaN(parseFloat(formData.latitude)) &&
+                    !isNaN(parseFloat(formData.longitude))
+                      ? [parseFloat(formData.latitude), parseFloat(formData.longitude)]
+                      : [22.30, 71.80]
+                  }
+                  zoom={
+                    formData.latitude &&
+                    formData.longitude &&
+                    !isNaN(parseFloat(formData.latitude)) &&
+                    !isNaN(parseFloat(formData.longitude))
+                      ? 12
+                      : 7
+                  }
+                  className="h-full w-full"
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <MapClickHandler onSelectLocation={handleMapLocationSelect} />
+                  {formData.latitude &&
+                    formData.longitude &&
+                    !isNaN(parseFloat(formData.latitude)) &&
+                    !isNaN(parseFloat(formData.longitude)) && (
+                      <Marker
+                        position={[parseFloat(formData.latitude), parseFloat(formData.longitude)]}
+                        icon={pickerPinIcon}
+                      />
+                    )}
+                </MapContainer>
+
+                <div className="absolute bottom-3 left-3 z-[1000] bg-[#0b1424]/90 backdrop-blur-sm border border-slate-700 px-3 py-1.5 rounded-lg text-[11px] text-slate-300 font-mono shadow-lg">
+                  {formData.latitude && formData.longitude ? (
+                    <span>
+                      📍 Selected: {Number(formData.latitude).toFixed(4)},{' '}
+                      {Number(formData.longitude).toFixed(4)}
+                    </span>
+                  ) : (
+                    <span>Click on map to drop pin</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Picker Footer */}
+              <div className="flex items-center justify-between px-5 py-3 border-t border-slate-800 bg-[#080f1c] text-xs">
+                <span className="text-slate-400">
+                  Clicking anywhere on the map sets the coordinates and closes the picker.
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowMapPicker(false)}
+                  className="px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold transition"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

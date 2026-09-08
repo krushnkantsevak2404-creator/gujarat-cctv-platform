@@ -194,7 +194,7 @@ export default function VehicleSearchPage({
     : [];
 
   const centerPosition =
-    validSequencePoints.length > 0 ? validSequencePoints[0] : [23.0225, 72.5714]; // Ahmedabad default
+    validSequencePoints.length > 0 ? validSequencePoints[0] : [22.30, 71.80]; // Gujarat Geographic Center
 
   return (
     <div className="space-y-6 animate-fadeIn">
